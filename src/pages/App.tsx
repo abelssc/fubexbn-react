@@ -1,10 +1,13 @@
 import Filtro from "../components/Filtro"
+import { AppProvider } from "../context/AppContext"
 
 const App = () => {
   return (
-    <div className="grid grid-cols-3 gap-4">
+    <AppProvider>
+    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
       <Filtro />
     </div>
+    </AppProvider>
   )
 }
 

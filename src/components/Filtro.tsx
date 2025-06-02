@@ -1,150 +1,52 @@
-import React, { useState } from "react";
-import clientAxios from "../config/axios";
-import readXlsxFile from "read-excel-file";
-
-type Inputs = {
-  DNI_CLIENTE: string;
-  PLAZO: string;
-  OBS_VENDEDOR: string;
-  captcha_respuesta2: string;
-};
+import { useRef, useState } from "react";
+import Filtro_Masivo from "./Filtro_Masivo";
+import Filtro_Personalizado from "./Filtro_Personalizado";
 
 const Filtro = () => {
-  const [inputs, setInputs] = useState<Inputs>({
-    DNI_CLIENTE: "",
-    PLAZO: "",
-    OBS_VENDEDOR: "",
-    captcha_respuesta2: "",
-  });
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target as HTMLInputElement;
-    setInputs((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmit = async () => {
-    const formData = new FormData();
-    formData.append("DNI_CLIENTE", inputs.DNI_CLIENTE);
-    formData.append("PLAZO", inputs.PLAZO);
-    formData.append("OBS_VENDEDOR", inputs.OBS_VENDEDOR);
-    formData.append("captcha_respuesta2", inputs.captcha_respuesta2);
-
-    try {
-      const response = await clientAxios.post("", formData);
-
-      console.log("Respuesta:", response.data);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const readFile= async (e: React.ChangeEvent<HTMLInputElement>) =>{
-    const {files} = e.target;
-    if(!files) return;
-
-    try{
-        const rows= await readXlsxFile(files[0]);
-        if (rows[0][0] !== 'DNI_CLIENTE' ||
-             rows[0][1] !== 'PLAZO' || 
-             rows[0][2] !== 'OBS_VENDEDOR'
-        ){
-            throw('');
-        }
-        //eliminar cabecera
-        rows.shift();
-
-        const data = rows.map((row) => {
-            // Formatear DNI a 8 dígitos
-            const dni = String(row[0] ?? "").padStart(8, "0");
-
-            return {
-                DNI_CLIENTE: dni,
-                PLAZO: row[1] ?? 60,
-                OBS_VENDEDOR: row[2] ?? "",
-            };
-        });
-
-        const filtros={
-            correlativo:0,
-            data
-        }
-      localStorage.setItem("filtros", JSON.stringify(filtros));
+  const captchaRef = useRef<HTMLImageElement | null>(null);
+  const [captcha,setCaptcha] = useState('');
 
 
-    }catch(error){
-        console.log(error);
-    }
-  };
+  const reloadCaptcha = () => {
+    if (!captchaRef.current) return;
+    captchaRef.current.src = "https://fuvexbn.a365.com.pe:7443/BN/captcha2.php";
+  }
 
   return (
     <div className="w-full p-4">
       <div className="bg-white border border-gray-300 rounded-xl p-4 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-800 mb-3">
-          Enviar DNIs Masivo
-        </h2>
-        <input
-            type="file"
-            onChange={readFile}
-            className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
-        />
-        <h2 className="text-lg font-semibold text-gray-800 mb-3">
-          Enviar DNIs Personalizado
-        </h2>
-        <div className="mb-2">
-          <label className="block text-sm text-gray-700">DNI</label>
+        <h1 className="text-xl font-semibold text-gray-800 mb-3">
+          Enviar DNI's
+        </h1>
+        
+        {/* CAPTCHA */}
+        <div className="flex gap-3 mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" width={40} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="cursor-pointer" onClick={reloadCaptcha}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+            </svg>
+          <img
+            src="https://fuvexbn.a365.com.pe:7443/BN/captcha2.php"
+            alt=""
+            width={120}
+            height={50}
+            ref={captchaRef}
+          />
           <input
             type="text"
-            name="DNI_CLIENTE"
-            value={inputs.DNI_CLIENTE}
-            onChange={handleChange}
+            value={captcha}
+            name="captcha"
+            onChange={(e)=>setCaptcha(e.target.value)}
             className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
+            placeholder="Ingrese captcha"
           />
         </div>
-
-        <div className="mb-2">
-          <label className="block text-sm text-gray-700">Plazo</label>
-          <input
-            type="text"
-            name="PLAZO"
-            value={inputs.PLAZO}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
-          />
-        </div>
-
-        <div className="mb-2">
-          <label className="block text-sm text-gray-700">Observaciones</label>
-          <textarea
-            name="OBS_VENDEDOR"
-            value={inputs.OBS_VENDEDOR}
-            onChange={handleChange}
-            rows={2}
-            className="w-full border border-gray-300 rounded px-2 py-1 text-sm resize-none"
-          />
-        </div>
-
-        <div className="mb-3">
-          <label className="block text-sm text-gray-700">Captcha</label>
-          <input
-            type="text"
-            name="captcha_respuesta2"
-            value={inputs.captcha_respuesta2}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
-          />
-        </div>
-
-        <button
-          onClick={handleSubmit}
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 text-sm"
-        >
-          Enviar
-        </button>
+        {/* CARGA MASIVA */}
+        <Filtro_Masivo captcha={captcha}/>
+      
+        {/* PERSONALIZADO */}
+        <Filtro_Personalizado captcha={captcha}/>
+            
       </div>
     </div>
   );
