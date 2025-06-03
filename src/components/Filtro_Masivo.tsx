@@ -122,6 +122,7 @@ const Filtro_Masivo = ({captcha}:{captcha:string}) => {
           
           if(result.status===statusTypes.WAITING){
             //ESPERAMOS 2MIN PARA VOLVER A ENVIAR EL SUBMIT
+            setTimeout(handleSubmit,120000);
           }else if(result.status===statusTypes.CAPTCHA){
               Swal.fire('Captcha Filtros incorrecto');
               setLoading(false);
@@ -132,10 +133,8 @@ const Filtro_Masivo = ({captcha}:{captcha:string}) => {
             };
             localStorage.setItem('datosMasivos',JSON.stringify(datosMasivos));
             setDatosMasivos(datosMasivos);
-
+            setTimeout(handleSubmit,2000);
           }
-
-
         } catch (error: unknown) {
           if (error instanceof Error) {
             Swal.fire({
@@ -196,12 +195,16 @@ const Filtro_Masivo = ({captcha}:{captcha:string}) => {
               <span className="font-medium">Archivo cargado:</span>
               {datosMasivos.clientes.length} clientes | Enviados:{" "}
               {datosMasivos.correlativo}
-              <button 
-                className="bg-blue-600 text-white py-1 px-2 rounded hover:bg-blue-700 text-xs cursor-pointer ml-4"
-                onClick={handleSubmit}
-                >
-                  Enviar
-              </button>
+              {
+                loading
+                ?<span className="bg-gray-200 py-1 px-2 rounded ml-4">Enviando...</span>
+                :<button 
+                  className="bg-blue-600 text-white py-1 px-2 rounded hover:bg-blue-700 text-xs cursor-pointer ml-4"
+                  onClick={handleSubmit}
+                  >
+                    Enviar
+                </button>
+              }
             </p>
           </div>
         )}
