@@ -1,5 +1,7 @@
 import { useState } from "react";
 import Swal from "sweetalert2";
+import clientAxios from "../config/axios";
+import { useApp } from "../context/AppContext";
 
 type FormularioPersonalizado = {
     dni: string;
@@ -8,6 +10,7 @@ type FormularioPersonalizado = {
 };
 
 const Filtro_Personalizado = ({captcha}:{captcha:string}) => {
+  const {enqueue,setRespuestas} = useApp();
   const [formularioPersonalizado, setFormularioPersonalizado] =
     useState<FormularioPersonalizado>({
       dni: "",
@@ -38,33 +41,41 @@ const Filtro_Personalizado = ({captcha}:{captcha:string}) => {
     formData.append("OBS_VENDEDOR", formularioPersonalizado.observaciones);
     formData.append("captcha_respuesta2", captcha);
 
-    try {
-      // const response = await clientAxios.post("", formData);
+    enqueue({
+      action: "GuardarFiltro.php",
+      callback: async () => {
+        try {
+          const {data} = await clientAxios.post("GuardarFiltro.php", formData);
+          setRespuestas(data);
 
-      Swal.fire({
-        title: "OK",
-        icon: "success",
-      });
-      setFormularioPersonalizado((prev) => ({
-        ...prev,
-        dni: "",
-        observaciones: "",
-      }));
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        Swal.fire({
-          title: error.message || "Error al enviar el formulario",
-          icon: "error",
-        });
-      } else {
-        Swal.fire({
-          title: "Error al enviar el formulario",
-          icon: "error",
-        });
-      }
-      console.log(error);
-    }
-  };
+          Swal.fire({
+            title: "OK",
+            icon: "success",
+          });
+
+          setFormularioPersonalizado((prev) => ({
+            ...prev,
+            dni: "",
+            observaciones: "",
+          }));
+        } catch (error: unknown) {
+          if (error instanceof Error) {
+            Swal.fire({
+              title: error.message || "Error al enviar el filtro",
+              icon: "error",
+            });
+          } else {
+            Swal.fire({
+              title: "Error al enviar el filtro",
+              icon: "error",
+            });
+          }
+          console.error(error);
+        }
+      },
+    });
+  }
+
   return (
     <div className="py-2 px-4 bg-gray-100 rounded-xl">
       <h3 className="text-lg font-semibold text-gray-800 mb-3">

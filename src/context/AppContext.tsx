@@ -1,19 +1,27 @@
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, useState, type ReactNode } from "react";
 
 
-type AppContext={
-    enqueue:(obj:any)=>void;
+type Task = {
+  action: string;
+  callback: () => Promise<void>;
 };
 
-const AppContext = createContext<AppContext|null>(null);
+type AppContextType = {
+  enqueue: (task: Task) => void;
+  respuestas: string;
+  setRespuestas: (value: string) => void;
+};
+const AppContext = createContext<AppContextType|null>(null);
 
 export const AppProvider=({children}:{children:ReactNode})=>{
-    const queue:any = [];
+    const [respuestas,setRespuestas] = useState('');
+
+    const queue:Task[] = [];
     let isProcessing = false;
     let lastExecutionTime = 0;
 
-    const enqueue = (obj:any) => {
-        queue.push(obj);
+    const enqueue = (task:Task) => {
+        queue.push(task);
         processQueue();
     };
 
@@ -31,13 +39,16 @@ export const AppProvider=({children}:{children:ReactNode})=>{
 
         isProcessing = true;
         lastExecutionTime = now;
-        const obj = queue.shift();
-        const naw=new Date();
-        console.log("Fetching..."+obj.action,naw.getMinutes(),naw.getSeconds(),naw.getMilliseconds());
+
+        const task = queue.shift();
+        const time=new Date();
+        console.log("Ejecutando: " + task?.action, time.toLocaleTimeString());
         
         try {
             // AQUI EJECUTAMOS LOS CALLBACK
-            
+             if (task?.callback) {
+                await task.callback(); // 🔥 Ejecutamos el callback proporcionado
+            }
         } finally {
             isProcessing = false;
             processQueue(); // Procesar la siguiente tarea inmediatamente (se calculará el delay)
@@ -47,7 +58,9 @@ export const AppProvider=({children}:{children:ReactNode})=>{
     return (
         <AppContext.Provider value={
             {
-                enqueue
+                enqueue,
+                respuestas,
+                setRespuestas
             }
         }>
             {children}
