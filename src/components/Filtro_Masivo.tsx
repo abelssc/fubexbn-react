@@ -123,19 +123,24 @@ const Filtro_Masivo = ({captcha}:{captcha:string}) => {
           if(result.status===statusTypes.WAITING){
             //ESPERAMOS 2MIN PARA VOLVER A ENVIAR EL SUBMIT
             setTimeout(handleSubmit,120000);
-          }else if(result.status===statusTypes.CAPTCHA){
-              Swal.fire('Captcha Filtros incorrecto');
-              setLoading(false);
-          }else{
-            const datosMasivos: DatosMasivos = {
-              correlativo: correlativo+1,
-              clientes,
-            };
-            localStorage.setItem('datosMasivos',JSON.stringify(datosMasivos));
-            setDatosMasivos(datosMasivos);
-            setTimeout(handleSubmit,2000);
+            return;
           }
+          if(result.status===statusTypes.CAPTCHA){
+            Swal.fire('Captcha Filtros incorrecto');
+            setLoading(false);
+            return;
+          }
+         
+          const new_datosMasivos: DatosMasivos = {
+            correlativo: correlativo+1,
+            clientes,
+          };
+          localStorage.setItem('datosMasivos',JSON.stringify(new_datosMasivos));
+          setDatosMasivos(new_datosMasivos);
+          setTimeout(handleSubmit,2000);
+       
         } catch (error: unknown) {
+          setLoading(false);
           if (error instanceof Error) {
             Swal.fire({
               title: error.message || "Error al enviar el Filtro",
