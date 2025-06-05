@@ -94,19 +94,23 @@ const Filtro_Masivo = ({captcha}:{captcha:string}) => {
         setLoading(false);
         return;
     }
-    if(!datosMasivos){
-        Swal.fire('No hay datos para enviar');
-        setLoading(false);
-        return;
+
+    const datosGuardados = localStorage.getItem("datosMasivos");
+    if (!datosGuardados) {
+      Swal.fire('No hay datos para enviar');
+      setLoading(false);
+      return;
     }
-    
+    const datosMasivos: DatosMasivos = JSON.parse(datosGuardados);
+
     const {clientes,correlativo}=datosMasivos;
-    const cliente=clientes[correlativo];
-    if(!cliente){
+   
+    if (correlativo >= clientes.length) {
         Swal.fire('Se terminaron de enviar todos los clientes o hubo un error en los datos');
         setLoading(false);
         return;
     }
+    const cliente=clientes[correlativo];
     const formData=new FormData();
     formData.append("DNI_CLIENTE", cliente.dni);
     formData.append("PLAZO", String(cliente.plazo));
@@ -131,12 +135,12 @@ const Filtro_Masivo = ({captcha}:{captcha:string}) => {
             return;
           }
          
-          const new_datosMasivos: DatosMasivos = {
+          const newDatosMasivos: DatosMasivos = {
             correlativo: correlativo+1,
             clientes,
           };
-          localStorage.setItem('datosMasivos',JSON.stringify(new_datosMasivos));
-          setDatosMasivos(new_datosMasivos);
+          localStorage.setItem('datosMasivos',JSON.stringify(newDatosMasivos));
+          setDatosMasivos(newDatosMasivos);
           setTimeout(handleSubmit,2000);
        
         } catch (error: unknown) {
