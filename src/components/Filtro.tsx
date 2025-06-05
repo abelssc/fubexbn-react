@@ -8,7 +8,6 @@ const Filtro = () => {
   const [captcha,setCaptcha] = useState('');
 
   return (
-    <div className="w-full p-4">
       <div className="bg-white border border-gray-300 rounded-xl p-4 shadow-sm">
         <h1 className="text-xl font-semibold text-gray-800 mb-3">
           Enviar DNI's
@@ -24,7 +23,6 @@ const Filtro = () => {
         {/* PERSONALIZADO */}
         <Filtro_Personalizado captcha={captcha}/>
       </div>
-    </div>
   );
 };
 

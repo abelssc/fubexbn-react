@@ -3,11 +3,27 @@ import readXlsxFile from "read-excel-file";
 import Swal from "sweetalert2";
 import clientAxios from "../config/axios";
 import { useApp } from "../context/AppContext";
+import productos from "../data/productos.json";
+import oficinas from "../data/oficinas.json";
+import estados from "../data/estados.json";
+import canales from "../data/canales.json";
 
 type Cliente = {
   dni: string;
+  nombres: string;
+  correo: string;
+  celular1: string;
+  celular2: string;
+  tipo_gestion: string;
+  producto: string;
+  oficina: string;
+  departamento:string;
+  provincia: string;
+  distrito: string;
+  estado: string;
+  monto: number;
   plazo: number;
-  observaciones: string;
+  tasa: number;
 };
 
 type DatosMasivos = {
@@ -29,8 +45,8 @@ const statusTypes = {
     CAPTCHA: 'CAPTCHA_INCORRECTO'
 };
 
-const Filtro_Masivo = ({captcha}:{captcha:string}) => {
-  const {enqueue} = useApp();
+const Sumarizado_Masivo = ({captcha}:{captcha:string}) => {
+  const {enqueue,_mes_sel} = useApp();
   const archivoRef = useRef<HTMLInputElement | null>(null);
   const [datosMasivos, setDatosMasivos] = useState<DatosMasivos | null>(null);
   const [errorArchivo, setErrorArchivo] = useState("");
@@ -38,15 +54,16 @@ const Filtro_Masivo = ({captcha}:{captcha:string}) => {
   const enviandoRef = useRef(true);
   const timeoutRef  = useRef<number | null>(null);
   const [details,setDetails]=useState<Details[]>([]);
+  const timestanpRef = useRef(Math.floor(Date.now() / 1000));
 
   useEffect(() => {
-    const datosGuardados = localStorage.getItem("datosMasivos");
+    const datosGuardados = localStorage.getItem("datosMasivosSumarizado");
     if (datosGuardados) {
       try {
         setDatosMasivos(JSON.parse(datosGuardados));
       } catch (error) {
         console.error("Error al cargar datos:", error);
-        localStorage.removeItem("datosMasivos");
+        localStorage.removeItem("datosMasivosSumarizado");
       }
     }
   }, []);
@@ -61,10 +78,19 @@ const Filtro_Masivo = ({captcha}:{captcha:string}) => {
 
     try {
       const rows = await readXlsxFile(archivo.files[0]);
-      if (
+      if (			
         rows[0][0] !== "DNI_CLIENTE" ||
-        rows[0][1] !== "PLAZO" ||
-        rows[0][2] !== "OBS_VENDEDOR"
+        rows[0][1] !== "NOMBRE_CLIENTE" ||
+        rows[0][2] !== "CELULAR" ||
+        rows[0][3] !== "TIPO_GESTION" ||
+        rows[0][4] !== "PRODUCTO" ||
+        rows[0][5] !== "DEPARTAMENTO" ||
+        rows[0][6] !== "PROVINCIA" ||
+        rows[0][7] !== "DISTRITO" ||
+        rows[0][8] !== "TIPO_DE_CONTACTO" ||
+        rows[0][9] !== "MONTO" ||
+        rows[0][10] !== "PLAZO" ||
+        rows[0][11] !== "TASA"
       ) {
         throw new Error("Formato de archivo inválido. Verifique las columnas");
       }
@@ -73,9 +99,21 @@ const Filtro_Masivo = ({captcha}:{captcha:string}) => {
 
       const clientes: Cliente[] = rows.map((row) => {
         return {
-          dni: String(row[0] ?? "").padStart(8, "0"),
-          plazo: Number(row[1] ?? 60),
-          observaciones: String(row[2] ?? ""),
+            dni: String(row[0] ?? "").padStart(8, "0"),
+            nombres: String(row[1] ?? ""),
+            correo: "",
+            celular1: String(row[2] ?? ""),
+            celular2: "",
+            tipo_gestion: String(row[3] ?? ""),
+            producto: String(row[4] ?? ""),
+            oficina:"",
+            departamento: String(row[5] ?? ""),
+            provincia: String(row[6] ?? ""),
+            distrito: String(row[7] ?? ""),
+            estado: String(row[8] ?? ""),
+            monto: Number(row[9] ?? 0),
+            plazo: Number(row[10] ?? 0),
+            tasa: Number(row[11] ?? 0)
         };
       });
 
@@ -83,7 +121,7 @@ const Filtro_Masivo = ({captcha}:{captcha:string}) => {
         correlativo: 0,
         clientes,
       };
-      localStorage.setItem("datosMasivos", JSON.stringify(newDatosMasivos));
+      localStorage.setItem("datosMasivosSumarizado", JSON.stringify(newDatosMasivos));
       setDatosMasivos(newDatosMasivos);
       setErrorArchivo("");
       console.log("Archivo procesado correctamente.");
@@ -109,7 +147,7 @@ const Filtro_Masivo = ({captcha}:{captcha:string}) => {
         return;
     }
 
-    const datosGuardados = localStorage.getItem("datosMasivos");
+    const datosGuardados = localStorage.getItem("datosMasivosSumarizado");
     if (!datosGuardados) {
       Swal.fire('No hay datos para enviar');
       setLoading(false);
@@ -124,18 +162,34 @@ const Filtro_Masivo = ({captcha}:{captcha:string}) => {
         setLoading(false);
         return;
     }
-    const cliente=clientes[correlativo];
+    const cliente=depurarCliente(clientes[correlativo]);
     const formData=new FormData();
-    formData.append("DNI_CLIENTE", cliente.dni);
-    formData.append("PLAZO", String(cliente.plazo));
-    formData.append("OBS_VENDEDOR", cliente.observaciones);
-    formData.append("captcha_respuesta2", captcha);
+    formData.append("MES_SEL",_mes_sel);
+    formData.append("DNI_CLIENTE",cliente.dni);
+    formData.append("NOMBRE_CLIENTE",cliente.nombres);
+    formData.append("CORREO",cliente.correo);
+    formData.append("TELEFONO1",cliente.celular1);
+    formData.append("TELEFONO2",cliente.celular2);
+    formData.append("CANAL",cliente.tipo_gestion);
+    formData.append("honeypot","");
+    formData.append("timestamp",String(timestanpRef.current));
+    formData.append("PRODUCTO",cliente.producto);
+    formData.append("OFICINA",cliente.oficina);
+    formData.append("ESTADO_REGISTRO",cliente.estado);
+    formData.append("MONTO",String(cliente.monto));
+    formData.append("PLAZO",String(cliente.plazo));
+    formData.append("TASA",String(cliente.tasa));
+    formData.append("archivo_nuevo_M","");
+    formData.append("TITULO_M","");
+    formData.append("OBSERVACION","");
+    formData.append("captcha_respuesta","");
+
 
     enqueue({
-      action: "GuardarFiltro.php",
+      action: "GuardarProspecto_BN.php",
       callback: async () => {
         try {
-          const {data} = await clientAxios.post("GuardarFiltro.php", formData);
+          const {data} = await clientAxios.post("GuardarProspecto_BN.php", formData);
           const result=evaluarRespuesta(data);
           setDetails(prev=>[
             {
@@ -160,7 +214,7 @@ const Filtro_Masivo = ({captcha}:{captcha:string}) => {
             correlativo: correlativo+1,
             clientes,
           };
-          localStorage.setItem('datosMasivos',JSON.stringify(newDatosMasivos));
+          localStorage.setItem('datosMasivosSumarizado',JSON.stringify(newDatosMasivos));
           setDatosMasivos(newDatosMasivos);
           timeoutRef.current=setTimeout(enviarDatosSecuenciales,2000);
          
@@ -186,16 +240,59 @@ const Filtro_Masivo = ({captcha}:{captcha:string}) => {
     
   }
 
-  const detenerDatosSecuenciales=()=>{
-    setLoading(false);
-   
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      console.log("⛔ Timeout cancelado");
+    const detenerDatosSecuenciales=()=>{
+        setLoading(false);
+    
+        if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        console.log("⛔ Timeout cancelado");
+        }
     }
-  }
 
-  
+    const depurarCliente = (cliente: Cliente): Cliente => {
+        const normalize = (str: string) => str.trim().toUpperCase();
+        const limpiarTexto = (str: string) =>
+            str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+
+        const clienteDepurado = { ...cliente };
+
+        // OFICINA
+        const departamento = normalize(clienteDepurado.oficina);
+        const provincia = normalize(clienteDepurado.provincia);
+        const distrito = normalize(clienteDepurado.distrito);
+        const oficinadistrito = `${departamento} - ${distrito}`;
+        const oficinaprovincia = `${departamento} - ${provincia}`;
+
+        if (oficinas.includes(oficinadistrito)) {
+            clienteDepurado.oficina = oficinadistrito;
+        } else if (oficinas.includes(oficinaprovincia)) {
+            clienteDepurado.oficina = oficinaprovincia;
+        } else {
+            clienteDepurado.oficina =
+            oficinas.find((o) => o.includes(departamento)) || oficinas[0];
+        }
+
+        // PRODUCTO
+        clienteDepurado.producto = normalize(clienteDepurado.producto);
+        if (!productos.includes(clienteDepurado.producto)) {
+            clienteDepurado.producto = productos[0];
+        }
+
+        // ESTADO
+        clienteDepurado.estado = normalize(clienteDepurado.estado);
+        if (!estados.includes(clienteDepurado.estado)) {
+            clienteDepurado.estado = estados[1];
+        }
+
+        // CANAL
+        clienteDepurado.tipo_gestion = normalize(clienteDepurado.tipo_gestion);
+        if(!canales.includes(clienteDepurado.tipo_gestion)){
+            clienteDepurado.tipo_gestion=canales[0];
+        }
+        
+        return clienteDepurado;
+    };
+
 
   const evaluarRespuesta=(mensaje:string)=>{
      if (!mensaje?.includes) return { status: statusTypes.ERROR, mensaje: 'Entrada inválida' };
@@ -310,4 +407,4 @@ const Filtro_Masivo = ({captcha}:{captcha:string}) => {
   );
 };
 
-export default Filtro_Masivo;
+export default Sumarizado_Masivo;

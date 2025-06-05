@@ -28,6 +28,19 @@ const clientAxios = axios.create(
 //         return Promise.reject(error);
 //     }
 // );
+/**
+ * 
+Request URL
+    https://fuvexbn.a365.com.pe:7443/BN/GuardarProspecto_BN.php
+Request Method
+    POST
+Status Code
+    302 Found
+Remote Address
+    200.126.53.68:7443
+Referrer Policy
+    strict-origin-when-cross-origin
+ */
 
 
 export default clientAxios;

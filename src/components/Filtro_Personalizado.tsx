@@ -94,7 +94,6 @@ const Filtro_Personalizado = ({captcha}:{captcha:string}) => {
             onChange={handleChange}
             className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
             required
-            pattern="\d{8}"
           />
         </div>
 
@@ -121,7 +120,7 @@ const Filtro_Personalizado = ({captcha}:{captcha:string}) => {
           />
         </div>
 
-        <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 text-sm">
+        <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 text-sm cursor-pointer">
           Registrar Cliente
         </button>
       </form>

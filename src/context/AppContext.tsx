@@ -10,11 +10,13 @@ type AppContextType = {
   enqueue: (task: Task) => void;
   respuestas: string;
   setRespuestas: (value: string) => void;
+  _mes_sel:string;
 };
 const AppContext = createContext<AppContextType|null>(null);
 
 export const AppProvider=({children}:{children:ReactNode})=>{
     const [respuestas,setRespuestas] = useState('');
+    const _mes_sel="_06_2025";
 
     const queue:Task[] = [];
     let isProcessing = false;
@@ -60,7 +62,8 @@ export const AppProvider=({children}:{children:ReactNode})=>{
             {
                 enqueue,
                 respuestas,
-                setRespuestas
+                setRespuestas,
+                _mes_sel
             }
         }>
             {children}

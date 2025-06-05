@@ -45,7 +45,7 @@ const Captcha = ({src,captcha,setCaptcha}:Captcha) => {
         value={captcha}
         name="captcha"
         onChange={(e) => setCaptcha(e.target.value)}
-        className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
+        className="w-full border border-gray-300 rounded px-2 py-1 text-sm max-w-48"
         placeholder="Ingrese captcha"
       />
     </div>
