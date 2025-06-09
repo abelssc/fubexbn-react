@@ -2,6 +2,7 @@ import { useState } from "react";
 import Swal from "sweetalert2";
 import clientAxios from "../config/axios";
 import { useApp } from "../context/AppContext";
+import { toast } from "react-toastify";
 
 type FormularioPersonalizado = {
     dni: string;
@@ -41,6 +42,11 @@ const Filtro_Personalizado = ({captcha}:{captcha:string}) => {
     formData.append("OBS_VENDEDOR", formularioPersonalizado.observaciones);
     formData.append("captcha_respuesta2", captcha);
 
+    const id = toast.loading('✉️ Enviando Dni...',{
+      closeOnClick: true,
+      position: "top-right",
+      closeButton: true,
+    });
     enqueue({
       action: "GuardarFiltro.php",
       callback: async () => {
@@ -48,10 +54,7 @@ const Filtro_Personalizado = ({captcha}:{captcha:string}) => {
           const {data} = await clientAxios.post("GuardarFiltro.php", formData);
           setRespuestas(data);
 
-          // Swal.fire({
-          //   title: "OK",
-          //   icon: "success",
-          // });
+          toast.update(id, { render: "✉️ Dni enviado!", type: "success", isLoading: false, autoClose: 2000 });
 
           setFormularioPersonalizado((prev) => ({
             ...prev,
@@ -77,7 +80,7 @@ const Filtro_Personalizado = ({captcha}:{captcha:string}) => {
   }
 
   return (
-    <div className="py-2 px-4 bg-gray-100 rounded-xl">
+    <div className="py-2 px-4">
       <h3 className="text-lg font-semibold text-gray-800 mb-3">
         Registro Personalizado
       </h3>

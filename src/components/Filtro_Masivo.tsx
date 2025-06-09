@@ -3,6 +3,7 @@ import readXlsxFile from "read-excel-file";
 import Swal from "sweetalert2";
 import clientAxios from "../config/axios";
 import { useApp } from "../context/AppContext";
+import { toast } from "react-toastify";
 
 type Cliente = {
   dni: string;
@@ -51,9 +52,8 @@ const Filtro_Masivo = ({captcha}:{captcha:string}) => {
     }
   }, []);
 
-  const procesarArchivoExcel = async (e: React.FormEvent) => {
+  const procesarArchivoExcel = async (e:React.ChangeEvent<HTMLInputElement>) => {
     
-    e.preventDefault();
     setErrorArchivo("");
 
     const archivo = archivoRef.current;
@@ -86,7 +86,11 @@ const Filtro_Masivo = ({captcha}:{captcha:string}) => {
       localStorage.setItem("datosMasivos", JSON.stringify(newDatosMasivos));
       setDatosMasivos(newDatosMasivos);
       setErrorArchivo("");
-      console.log("Archivo procesado correctamente.");
+      e.target.value="";
+      toast.success("📃 Archivo cargado exitósamente",{
+        autoClose: 2000
+      })
+
     } catch (error: unknown) {
       if (error instanceof Error) {
         setErrorArchivo(error.message || "Error al procesar el archivo");
@@ -226,7 +230,7 @@ const Filtro_Masivo = ({captcha}:{captcha:string}) => {
   }
 
   return (
-    <div className="py-2 px-4 bg-gray-100 mb-4 rounded-xl">
+    <div className="py-2 px-4 bg-blue-50 mb-4 rounded-xl">
       <h3 className="text-lg font-semibold text-gray-800 mb-3">Carga Masiva</h3>
 
         {/* Mostrar correlativo si existe */}
@@ -279,7 +283,7 @@ const Filtro_Masivo = ({captcha}:{captcha:string}) => {
             }
           </div>
         :
-          <form className="flex flex-col gap-3" onSubmit={procesarArchivoExcel}>
+          <form className="flex flex-col gap-3">
             <div>
               <input
                 type="file"
@@ -287,23 +291,16 @@ const Filtro_Masivo = ({captcha}:{captcha:string}) => {
                 required
                 ref={archivoRef}
                 accept=".xlsx, .xls"
+                onChange={procesarArchivoExcel}
               />
               <p className="mt-1 text-xs text-gray-500">
-                Formato requerido: .xlsx con columnas DNI_CLIENTE, PLAZO,
-                OBS_VENDEDOR
+                Formato requerido: .xlsx <a className="text-blue-600 hover:text-blue-800" href="/media/filtro.xlsx">Descargar Plantilla</a>
               </p>
             </div>
 
             {errorArchivo && (
               <div className="text-red-500 text-sm py-2">{errorArchivo}</div>
             )}
-
-            <button
-              type="submit"
-              className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 text-sm self-end cursor-pointer"
-            >
-              Procesar Archivo
-            </button>
           </form>
       }
     </div>

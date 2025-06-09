@@ -7,6 +7,7 @@ import productos from "../data/productos.json";
 import oficinas from "../data/oficinas.json";
 import estados from "../data/estados.json";
 import canales from "../data/canales.json";
+import { toast } from "react-toastify";
 
 type Cliente = {
   dni: string;
@@ -37,12 +38,16 @@ type Details = {
 }
 
 const statusTypes = {
+    //CONTINUA LA EJECUCION
     SUCCESS: 'REGISTRADO_CON_EXITO',
-    FILTERED: 'YA_FILTRADO',
-    ERROR: 'ERROR',
     UNKNOWN: 'DESCONOCIDO',
-    WAITING: 'EN_ESPERA',
-    CAPTCHA: 'CAPTCHA_INCORRECTO'
+    FILTERED_BY_OTHER_USER: 'FILTERED_BY_OTHER_USER',
+    NOT_FILTERED: 'DNI_NO_FILTRADO',
+    DUPLICADO: 'YA_LO_REGISTRASTE',
+  
+    //DETIENE LA EJECUCION
+    ERROR: 'ERROR',
+    CAPTCHA: 'CAPTCHA_INCORRECTO',
 };
 
 const Sumarizado_Masivo = ({captcha}:{captcha:string}) => {
@@ -68,10 +73,9 @@ const Sumarizado_Masivo = ({captcha}:{captcha:string}) => {
     }
   }, []);
 
-  const procesarArchivoExcel = async (e: React.FormEvent) => {
+  const procesarArchivoExcel = async (e:React.ChangeEvent<HTMLInputElement>) => {
     
-    e.preventDefault();
-    setErrorArchivo("");
+    setErrorArchivo("");    
 
     const archivo = archivoRef.current;
     if (!archivo || !archivo.files || archivo.files.length === 0) return;
@@ -124,7 +128,11 @@ const Sumarizado_Masivo = ({captcha}:{captcha:string}) => {
       localStorage.setItem("datosMasivosSumarizado", JSON.stringify(newDatosMasivos));
       setDatosMasivos(newDatosMasivos);
       setErrorArchivo("");
-      console.log("Archivo procesado correctamente.");
+      e.target.value="";
+      toast.success("📃 Archivo cargado exitósamente",{
+        autoClose: 2000
+      })
+
     } catch (error: unknown) {
       if (error instanceof Error) {
         setErrorArchivo(error.message || "Error al procesar el archivo");
@@ -140,7 +148,7 @@ const Sumarizado_Masivo = ({captcha}:{captcha:string}) => {
       setLoading(false);
       return;
     }
-
+    
     if(!captcha.length) {
         Swal.fire('Rellene el captcha');
         setLoading(false);
@@ -182,7 +190,7 @@ const Sumarizado_Masivo = ({captcha}:{captcha:string}) => {
     formData.append("archivo_nuevo_M","");
     formData.append("TITULO_M","");
     formData.append("OBSERVACION","");
-    formData.append("captcha_respuesta","");
+    formData.append("captcha_respuesta",captcha);
 
 
     enqueue({
@@ -194,18 +202,13 @@ const Sumarizado_Masivo = ({captcha}:{captcha:string}) => {
           setDetails(prev=>[
             {
               time: new Date().toLocaleTimeString(),
-              content: `Dni enviado: ${cliente.dni}; ${result.mensaje}`
+              content: `Sumarizado enviado: ${cliente.dni}; ${result.mensaje}`
             },
             ...prev
           ]);
           
-          if(result.status===statusTypes.WAITING){
-            //ESPERAMOS 2MIN PARA VOLVER A ENVIAR EL SUBMIT
-            timeoutRef.current=setTimeout(enviarDatosSecuenciales,120000);
-            return;
-          }
-          if(result.status===statusTypes.CAPTCHA){
-            Swal.fire('Captcha Filtros incorrecto');
+          if(result.status===statusTypes.CAPTCHA || result.status===statusTypes.ERROR){
+            Swal.fire(result.mensaje);
             setLoading(false);
             return;
           }
@@ -216,9 +219,8 @@ const Sumarizado_Masivo = ({captcha}:{captcha:string}) => {
           };
           localStorage.setItem('datosMasivosSumarizado',JSON.stringify(newDatosMasivos));
           setDatosMasivos(newDatosMasivos);
-          timeoutRef.current=setTimeout(enviarDatosSecuenciales,2000);
-         
-          
+          timeoutRef.current=setTimeout(enviarDatosSecuenciales,5000);
+
         } catch (error: unknown) {
           setLoading(false);
           if (error instanceof Error) {
@@ -240,66 +242,72 @@ const Sumarizado_Masivo = ({captcha}:{captcha:string}) => {
     
   }
 
-    const detenerDatosSecuenciales=()=>{
-        setLoading(false);
-    
-        if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        console.log("⛔ Timeout cancelado");
-        }
-    }
+  const detenerDatosSecuenciales=()=>{
+      setLoading(false);
+  
+      if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      console.log("⛔ Timeout cancelado");
+      }
+  }
 
-    const depurarCliente = (cliente: Cliente): Cliente => {
-        const normalize = (str: string) => str.trim().toUpperCase();
-        // const limpiarTexto = (str: string) =>
-        //     str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+  const depurarCliente = (cliente: Cliente): Cliente => {
+      const normalize = (str: string) => str.trim().toUpperCase();
+      // const limpiarTexto = (str: string) =>
+      //     str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
 
-        const clienteDepurado = { ...cliente };
+      const clienteDepurado = { ...cliente };
 
-        // OFICINA
-        const departamento = normalize(clienteDepurado.oficina);
-        const provincia = normalize(clienteDepurado.provincia);
-        const distrito = normalize(clienteDepurado.distrito);
-        const oficinadistrito = `${departamento} - ${distrito}`;
-        const oficinaprovincia = `${departamento} - ${provincia}`;
+      // OFICINA
+      const departamento = normalize(clienteDepurado.oficina);
+      const provincia = normalize(clienteDepurado.provincia);
+      const distrito = normalize(clienteDepurado.distrito);
+      const oficinadistrito = `${departamento} - ${distrito}`;
+      const oficinaprovincia = `${departamento} - ${provincia}`;
 
-        if (oficinas.includes(oficinadistrito)) {
-            clienteDepurado.oficina = oficinadistrito;
-        } else if (oficinas.includes(oficinaprovincia)) {
-            clienteDepurado.oficina = oficinaprovincia;
-        } else {
-            clienteDepurado.oficina =
-            oficinas.find((o) => o.includes(departamento)) || oficinas[0];
-        }
+      if (oficinas.includes(oficinadistrito)) {
+          clienteDepurado.oficina = oficinadistrito;
+      } else if (oficinas.includes(oficinaprovincia)) {
+          clienteDepurado.oficina = oficinaprovincia;
+      } else {
+          clienteDepurado.oficina =
+          oficinas.find((o) => o.includes(departamento)) || oficinas[0];
+      }
 
-        // PRODUCTO
-        clienteDepurado.producto = normalize(clienteDepurado.producto);
-        if (!productos.includes(clienteDepurado.producto)) {
-            clienteDepurado.producto = productos[0];
-        }
+      // PRODUCTO
+      clienteDepurado.producto = normalize(clienteDepurado.producto);
+      if (!productos.includes(clienteDepurado.producto)) {
+          clienteDepurado.producto = productos[0];
+      }
 
-        // ESTADO
-        clienteDepurado.estado = normalize(clienteDepurado.estado);
-        if (!estados.includes(clienteDepurado.estado)) {
-            clienteDepurado.estado = estados[1];
-        }
+      // ESTADO
+      clienteDepurado.estado = normalize(clienteDepurado.estado);
+      if (!estados.includes(clienteDepurado.estado)) {
+          clienteDepurado.estado = estados[1];
+      }
 
-        // CANAL
-        clienteDepurado.tipo_gestion = normalize(clienteDepurado.tipo_gestion);
-        if(!canales.includes(clienteDepurado.tipo_gestion)){
-            clienteDepurado.tipo_gestion=canales[0];
-        }
-        
-        return clienteDepurado;
-    };
+      // CANAL
+      clienteDepurado.tipo_gestion = normalize(clienteDepurado.tipo_gestion);
+      if(!canales.includes(clienteDepurado.tipo_gestion)){
+          clienteDepurado.tipo_gestion=canales[0];
+      }
+      
+      return clienteDepurado;
+  };
 
 
   const evaluarRespuesta=(mensaje:string)=>{
      if (!mensaje?.includes) return { status: statusTypes.ERROR, mensaje: 'Entrada inválida' };
 
     // Casos directos
-    if (mensaje.includes("Se registró con éxito")) return { status: statusTypes.SUCCESS, mensaje: "Registro exitoso!" };
-    if (mensaje.includes("Captcha incorrecto")) return { status: statusTypes.CAPTCHA, mensaje: "Error en captcha, reintente" };
+    if (mensaje.includes("Se registró con éxito")) 
+        return { status: statusTypes.SUCCESS, mensaje: "Registro exitoso!" };
+    if (mensaje.includes("Captcha incorrecto")) 
+        return { status: statusTypes.CAPTCHA, mensaje: "Error en captcha Sumarizado, reintente" };
+    if(mensaje.includes("No se pueden ingresar registros")) 
+        return { status: statusTypes.ERROR, mensaje: "No se pueden ingresar registros en días feriados"};
+    if(mensaje.includes("Solo se pueden registrar")) 
+        return { status: statusTypes.ERROR, mensaje: "Solo se pueden registrar clientes entre las 7am y 8pm"};
 
     // Parseo condicional
     try {
@@ -308,22 +316,25 @@ const Sumarizado_Masivo = ({captcha}:{captcha:string}) => {
       
       if (mensaje.includes("text-danger")) {
         const texto = getText(".text-danger");
-        if (texto?.includes("cola de espera")) return { status: statusTypes.WAITING, mensaje: "Espere 2 minutos" };
-        return { status: statusTypes.ERROR, mensaje: texto || "Error no especificado" };
+        if (texto?.includes("no estás designado")) return { status: statusTypes.FILTERED_BY_OTHER_USER, mensaje: texto };
+        if (texto?.includes("no a sido filtrado")) return { status: statusTypes.NOT_FILTERED, mensaje: texto };
+        return { status: statusTypes.UNKNOWN, mensaje: texto || "Error no especificado" };
       }
-      
-      if (mensaje.includes("text-primary")) {
-        return { status: statusTypes.FILTERED, mensaje: getText("table tr:nth-child(2) td") || "Ya existe" };
+
+      if(mensaje.includes("text-primary")){
+        const texto = getText(".text-primary");
+        return { status: statusTypes.DUPLICADO, mensaje: texto}
       }
+
+      return { status: statusTypes.UNKNOWN, mensaje: mensaje };
+
     } catch {
       return { status: statusTypes.ERROR, mensaje: "Error al procesar respuesta" };
     }
-
-    return { status: statusTypes.UNKNOWN, mensaje: mensaje };
   }
 
   return (
-    <div className="py-2 px-4 bg-gray-100 mb-4 rounded-xl">
+    <div className="py-2 px-4 bg-blue-50 mb-4 rounded-xl">
       <h3 className="text-lg font-semibold text-gray-800 mb-3">Carga Masiva</h3>
 
         {/* Mostrar correlativo si existe */}
@@ -376,7 +387,7 @@ const Sumarizado_Masivo = ({captcha}:{captcha:string}) => {
             }
           </div>
         :
-          <form className="flex flex-col gap-3" onSubmit={procesarArchivoExcel}>
+          <form className="flex flex-col gap-3">
             <div>
               <input
                 type="file"
@@ -384,10 +395,10 @@ const Sumarizado_Masivo = ({captcha}:{captcha:string}) => {
                 required
                 ref={archivoRef}
                 accept=".xlsx, .xls"
+                onChange={procesarArchivoExcel}
               />
               <p className="mt-1 text-xs text-gray-500">
-                Formato requerido: .xlsx con columnas DNI_CLIENTE, PLAZO,
-                OBS_VENDEDOR
+                Formato requerido: .xlsx <a className="text-blue-600 hover:text-blue-800" href="/media/sumarizado.xlsx">Descargar Plantilla</a>
               </p>
             </div>
 
@@ -395,12 +406,12 @@ const Sumarizado_Masivo = ({captcha}:{captcha:string}) => {
               <div className="text-red-500 text-sm py-2">{errorArchivo}</div>
             )}
 
-            <button
+            {/* <button
               type="submit"
               className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 text-sm self-end cursor-pointer"
             >
               Procesar Archivo
-            </button>
+            </button> */}
           </form>
       }
     </div>

@@ -3,6 +3,7 @@ import Captcha from "./Captcha";
 import Swal from "sweetalert2";
 import clientAxios from "../config/axios";
 import { useApp } from "../context/AppContext";
+import { toast } from "react-toastify";
 
 const Filtro_Buscar = () => {
   const { enqueue, setRespuestas } = useApp();
@@ -19,11 +20,20 @@ const Filtro_Buscar = () => {
     formData.append("DNI_CLIENTE", dni);
     formData.append("captcha_respuesta3", captcha);
 
+    const id = toast.loading('✉️ Buscando Dni...',{
+      closeOnClick: true,
+      position: "top-right",
+      closeButton: true,
+    });
+
     enqueue({
       action: "BuscarFiltro.php",
       callback: async () => {
         try {
           const { data } = await clientAxios.post("BuscarFiltro.php", formData);
+
+          toast.update(id, { render: "✉️ Dni buscando!", type: "success", isLoading: false, autoClose: 2000 });
+
           setRespuestas(data);
           setDni("");
         } catch (error: unknown) {
