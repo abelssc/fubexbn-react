@@ -48,10 +48,10 @@ const Filtro_Personalizado = ({captcha}:{captcha:string}) => {
           const {data} = await clientAxios.post("GuardarFiltro.php", formData);
           setRespuestas(data);
 
-          Swal.fire({
-            title: "OK",
-            icon: "success",
-          });
+          // Swal.fire({
+          //   title: "OK",
+          //   icon: "success",
+          // });
 
           setFormularioPersonalizado((prev) => ({
             ...prev,
@@ -120,7 +120,8 @@ const Filtro_Personalizado = ({captcha}:{captcha:string}) => {
           />
         </div>
 
-        <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 text-sm cursor-pointer">
+        <button 
+          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 text-sm cursor-pointer">
           Registrar Cliente
         </button>
       </form>

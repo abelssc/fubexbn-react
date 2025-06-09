@@ -223,12 +223,12 @@ const Sumarizado_Masivo = ({captcha}:{captcha:string}) => {
           setLoading(false);
           if (error instanceof Error) {
             Swal.fire({
-              title: error.message || "Error al enviar el Filtro",
+              title: error.message || "Error al enviar el Sumarizado",
               icon: "error",
             });
           } else {
             Swal.fire({
-              title: "Error al enviar el Filtro",
+              title: "Error al enviar el Sumarizado",
               icon: "error",
             });
           }
@@ -251,8 +251,8 @@ const Sumarizado_Masivo = ({captcha}:{captcha:string}) => {
 
     const depurarCliente = (cliente: Cliente): Cliente => {
         const normalize = (str: string) => str.trim().toUpperCase();
-        const limpiarTexto = (str: string) =>
-            str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+        // const limpiarTexto = (str: string) =>
+        //     str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
 
         const clienteDepurado = { ...cliente };
 

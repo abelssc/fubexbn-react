@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Captcha from "./Captcha";
 import clientAxios from "../config/axios";
 import productos from "../data/productos.json";
@@ -7,17 +7,15 @@ import estados from "../data/estados.json";
 import canales from "../data/canales.json";
 import { useApp } from "../context/AppContext";
 import Swal from "sweetalert2";
+import { toast } from "react-toastify";
 
 type Formulario = {
-  mes_sel: string;
   dni: string;
   nombres: string;
   correo: string;
   celular1: string;
   celular2: string;
   tipo_gestion: string;
-  honeypot: "";
-  timestamp: string; //timestamp 1749141307
   producto: string;
   oficina: string;
   estado: string;
@@ -27,19 +25,17 @@ type Formulario = {
 };
 
 const Sumarizado = () => {
-  const {enqueue,_mes_sel} = useApp();
+  const {enqueue,_mes_sel,setRespuestas} = useApp();
   const [captcha, setCaptcha] = useState("");
   const [tasas, setTasas] = useState<string[]>([]);
+  const timestanpRef = useRef(Math.floor(Date.now() / 1000));
   const [formulario, setFormulario] = useState<Formulario>({
-    mes_sel: "",
     dni: "",
     nombres: "",
     correo: "",
     celular1: "",
     celular2: "",
     tipo_gestion: "PRESENCIAL",
-    honeypot: "",
-    timestamp: "",
     producto: "PRÉSTAMO NUEVO",
     oficina: "",
     estado: "INTERESADO",
@@ -67,7 +63,7 @@ const Sumarizado = () => {
         action: "Mostrarplazo.php",
         callback: async () =>{
             try{
-                const { data } = await clientAxios.post("/Mostrarplazo.php", formData);
+                const { data } = await clientAxios.post("Mostrarplazo.php", formData);
                 const regex = /new Option\('([^']*)','([^']*)'\)/g;
 
                 let match;
@@ -101,6 +97,123 @@ const Sumarizado = () => {
     })
   };
 
+  const buscarDni = ()=>{
+    if(!captcha.length) {
+        Swal.fire('Rellene el captcha');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('val_DNI',formulario.dni);
+    formData.append('val_CAPTCHA',captcha);
+
+    enqueue({
+      action: "BusquedaDNI.php",
+      callback: async () =>{
+          try{
+              const { data } = await clientAxios.post("BusquedaDNI.php", formData);
+              setRespuestas(data);
+              
+          } catch (error: unknown) {
+              if (error instanceof Error) {
+              Swal.fire({
+                  title: error.message || "Error al buscar el DNI",
+                  icon: "error",
+              });
+              } else {
+              Swal.fire({
+                  title: "Error al buscar el DNI",
+                  icon: "error",
+              });
+              }
+              console.error(error);
+          }
+      }
+    })
+
+  }
+  const enviarFormulario=()=>{
+    if(!captcha.length) {
+        Swal.fire('Rellene el captcha');
+        return;
+    }
+    const formData = new FormData();
+    formData.append('MES_SEL',_mes_sel);
+    formData.append('DNI_CLIENTE',formulario.dni);
+    formData.append('NOMBRE_CLIENTE',formulario.nombres);
+    formData.append('CORREO',formulario.correo);
+    formData.append('TELEFONO1',formulario.celular1);
+    formData.append('TELEFONO2',formulario.celular2);
+    formData.append('CANAL',formulario.tipo_gestion);
+    formData.append('honeypot','');
+    formData.append('timestamp',String(timestanpRef.current));
+    formData.append('PRODUCTO',formulario.producto);
+    formData.append('OFICINA',formulario.oficina);
+    formData.append('ESTADO_REGISTRO',formulario.estado);
+    formData.append('MONTO',String(formulario.monto));
+    formData.append('PLAZO',formulario.plazo);
+    formData.append('TASA',formulario.tasa);
+    formData.append('archivo_nuevo_M','');
+    formData.append('TITULO_M','');
+    formData.append('OBSERVACION','');
+    formData.append('captcha_respuesta',captcha);
+
+     enqueue({
+      action: "GuardarProspecto_BN.php",
+      callback: async () => {
+        try {
+          const {data} = await clientAxios.post("GuardarProspecto_BN.php", formData);
+          console.log('hi');
+          
+          toast.success("✉️ Registro enviado!", {
+            position: "top-center",
+            autoClose: 2000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: false,
+            progress: undefined,
+            delay: 0,
+          });
+          if(data.includes('Se registró con éxito!')){
+            setRespuestas('Se registró con éxito!, Ahora puedes actualizar su estatus o revisarlo en tu lista de ventas');
+          }else{
+            setRespuestas(data);
+          }
+
+          setFormulario({
+            dni: "",
+            nombres: "",
+            correo: "",
+            celular1: "",
+            celular2: "",
+            tipo_gestion: "PRESENCIAL",
+            producto: "PRÉSTAMO NUEVO",
+            oficina: "",
+            estado: "INTERESADO",
+            monto: 0,
+            plazo: "",
+            tasa: "",
+          });
+
+        }catch (error: unknown) {
+            if (error instanceof Error) {
+              Swal.fire({
+                title: error.message || "Error al enviar el Sumarizado",
+                icon: "error",
+              });
+            } else {
+              Swal.fire({
+                title: "Error al enviar el Sumarizado",
+                icon: "error",
+              });
+            }
+            console.error(error);
+          }
+        }
+     })
+  }
+
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
       <h3 className="text-xl font-semibold text-gray-800 mb-6">
@@ -133,7 +246,10 @@ const Sumarizado = () => {
                     required
                     placeholder="Ingrese DNI"
                 />
-                <button className="py-1 px-2 bg-blue-600 text-white text-xs cursor-pointer hover:bg-blue-700">
+                <button 
+                  className="py-1 px-2 bg-blue-600 text-white text-xs cursor-pointer hover:bg-blue-700"
+                  onClick={buscarDni}
+                >
                     Enviar
                 </button>
               </div>
@@ -337,7 +453,10 @@ const Sumarizado = () => {
               </select>
             </div>
           </div>
-          <button className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded cursor-pointer text-sm">
+          <button 
+            className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded cursor-pointer text-sm"
+            onClick={enviarFormulario}
+          >
                 Registrar
           </button>
         </div>

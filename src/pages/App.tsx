@@ -1,3 +1,4 @@
+import { ToastContainer } from "react-toastify"
 import Filtro from "../components/Filtro"
 import Filtro_Buscar from "../components/Filtro_Buscar"
 import Respuestas from "../components/Respuestas"
@@ -15,6 +16,7 @@ const App = () => {
       </div>
         <Filtro_Buscar />
       <Respuestas />
+      <ToastContainer/>
     </AppProvider>
   )
 }
