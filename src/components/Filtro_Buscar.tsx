@@ -55,10 +55,10 @@ const Filtro_Buscar = () => {
   };
 
   return (
-    <div className="bg-white border border-gray-300 rounded-xl p-4 shadow-sm">
-      <h3 className="text-lg font-semibold text-gray-800 mb-3">
+    <details className="bg-white border border-gray-300 rounded-xl p-4 shadow-sm">
+      <summary className="text-lg font-semibold text-gray-800 mb-3 cursor-pointer">
         Buscar Filtro
-      </h3>
+      </summary>
       <Captcha
         src="https://fuvexbn.a365.com.pe:7443/BN/captcha3.php"
         captcha={captcha}
@@ -82,7 +82,7 @@ const Filtro_Buscar = () => {
           Buscar
         </button>
       </form>
-    </div>
+    </details>
   );
 };
 

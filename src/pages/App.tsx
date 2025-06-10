@@ -8,13 +8,15 @@ import { AppProvider } from "../context/AppContext"
 const App = () => {
   return (
     <AppProvider>
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-        <Filtro />
-        <div className="col-span-2">
-        <Sumarizado />
+        <div className="grid lg:grid-cols-3 gap-4 p-4">
+          <div className="col-span-3 lg:col-span-1 space-y-4">
+            <Filtro />
+            <Filtro_Buscar />
+          </div>
+          <div className="col-span-3 lg:col-span-2">
+            <Sumarizado />
+          </div>
         </div>
-      </div>
-        <Filtro_Buscar />
       <Respuestas />
       <ToastContainer/>
     </AppProvider>

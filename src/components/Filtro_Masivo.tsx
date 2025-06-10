@@ -30,12 +30,17 @@ const statusTypes = {
     CAPTCHA: 'CAPTCHA_INCORRECTO'
 };
 
-const Filtro_Masivo = ({captcha}:{captcha:string}) => {
+type Filtro_Masivo={
+  captcha:string;
+  loading:boolean;
+  setLoading:(loading:boolean)=>void;
+};
+
+const Filtro_Masivo = ({captcha,loading,setLoading}:Filtro_Masivo) => {
   const {enqueue} = useApp();
   const archivoRef = useRef<HTMLInputElement | null>(null);
   const [datosMasivos, setDatosMasivos] = useState<DatosMasivos | null>(null);
   const [errorArchivo, setErrorArchivo] = useState("");
-  const [loading,setLoading] = useState(false);
   const enviandoRef = useRef(true);
   const timeoutRef  = useRef<number | null>(null);
   const [details,setDetails]=useState<Details[]>([]);

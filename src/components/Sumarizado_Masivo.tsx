@@ -50,12 +50,18 @@ const statusTypes = {
     CAPTCHA: 'CAPTCHA_INCORRECTO',
 };
 
-const Sumarizado_Masivo = ({captcha}:{captcha:string}) => {
+type Sumarizado_Masivo={
+  captcha:string;
+  loading:boolean;
+  setLoading:(loading:boolean)=>void;
+};
+
+const Sumarizado_Masivo = ({captcha,loading,setLoading}:Sumarizado_Masivo) => {
   const {enqueue,_mes_sel} = useApp();
   const archivoRef = useRef<HTMLInputElement | null>(null);
   const [datosMasivos, setDatosMasivos] = useState<DatosMasivos | null>(null);
   const [errorArchivo, setErrorArchivo] = useState("");
-  const [loading,setLoading] = useState(false);
+
   const enviandoRef = useRef(true);
   const timeoutRef  = useRef<number | null>(null);
   const [details,setDetails]=useState<Details[]>([]);
