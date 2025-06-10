@@ -8,6 +8,7 @@ import oficinas from "../data/oficinas.json";
 import estados from "../data/estados.json";
 import canales from "../data/canales.json";
 import { toast } from "react-toastify";
+import { getFechaCompacta } from "../utils/helpers";
 
 type Cliente = {
   dni: string;
@@ -25,6 +26,10 @@ type Cliente = {
   monto: number;
   plazo: number;
   tasa: number;
+  
+  fecha?:string;
+  estado_respuesta?:string;
+  respuesta?:string;
 };
 
 type DatosMasivos = {
@@ -218,6 +223,12 @@ const Sumarizado_Masivo = ({captcha,loading,setLoading}:Sumarizado_Masivo) => {
             setLoading(false);
             return;
           }
+
+          //Actualizamos Datos Cliente
+          cliente.fecha=getFechaCompacta();
+          cliente.estado_respuesta=result.status;
+          cliente.respuesta=result.mensaje;
+          clientes[correlativo]=cliente;
          
           const newDatosMasivos: DatosMasivos = {
             correlativo: correlativo+1,
@@ -225,7 +236,7 @@ const Sumarizado_Masivo = ({captcha,loading,setLoading}:Sumarizado_Masivo) => {
           };
           localStorage.setItem('datosMasivosSumarizado',JSON.stringify(newDatosMasivos));
           setDatosMasivos(newDatosMasivos);
-          timeoutRef.current=setTimeout(enviarDatosSecuenciales,5000);
+          timeoutRef.current=setTimeout(enviarDatosSecuenciales,20000);
 
         } catch (error: unknown) {
           setLoading(false);
@@ -301,7 +312,6 @@ const Sumarizado_Masivo = ({captcha,loading,setLoading}:Sumarizado_Masivo) => {
       return clienteDepurado;
   };
 
-
   const evaluarRespuesta=(mensaje:string)=>{
      if (!mensaje?.includes) return { status: statusTypes.ERROR, mensaje: 'Entrada inválida' };
 
@@ -337,6 +347,19 @@ const Sumarizado_Masivo = ({captcha,loading,setLoading}:Sumarizado_Masivo) => {
     } catch {
       return { status: statusTypes.ERROR, mensaje: "Error al procesar respuesta" };
     }
+  };
+
+  const descargarReporte=()=>{
+    const datos=localStorage.getItem("datosMasivosSumarizado");
+    if(!datos) {
+      Swal.fire('No hay datos que descargar');
+      return;
+    };
+
+    const clientes: Cliente[] = JSON.parse(datos);
+    
+
+
   }
 
   return (
@@ -403,21 +426,15 @@ const Sumarizado_Masivo = ({captcha,loading,setLoading}:Sumarizado_Masivo) => {
                 accept=".xlsx, .xls"
                 onChange={procesarArchivoExcel}
               />
-              <p className="mt-1 text-xs text-gray-500">
-                Formato requerido: .xlsx <a className="text-blue-600 hover:text-blue-800" href="/media/sumarizado.xlsx">Descargar Plantilla</a>
-              </p>
+              <div className="flex gap-4 mt-1 text-xs text-gray-500">
+                <a className="text-blue-600 hover:text-blue-800" href="/media/sumarizado.xlsx">Descargar Plantilla</a>
+                <span className="text-xs text-green-600 hover:text-green-800">Descargar Reporte</span>
+              </div>
             </div>
 
             {errorArchivo && (
               <div className="text-red-500 text-sm py-2">{errorArchivo}</div>
             )}
-
-            {/* <button
-              type="submit"
-              className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 text-sm self-end cursor-pointer"
-            >
-              Procesar Archivo
-            </button> */}
           </form>
       }
     </div>

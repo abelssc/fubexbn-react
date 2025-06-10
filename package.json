@@ -17,7 +17,8 @@
     "react-toastify": "^11.0.5",
     "read-excel-file": "^5.8.8",
     "sweetalert2": "^11.22.0",
-    "tailwindcss": "^4.1.8"
+    "tailwindcss": "^4.1.8",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useRef, useState, type ReactNode } from "react";
 
 
 type Task = {
@@ -18,33 +18,29 @@ export const AppProvider=({children}:{children:ReactNode})=>{
     const [respuestas,setRespuestas] = useState('');
     const _mes_sel="_06_2025";
 
-    const queue:Task[] = [];
-    let isProcessing = false;
-    let lastExecutionTime = 0;
+    const queue = useRef<Task[]>([]);
+    const isProcessing = useRef(false);
+    const lastExecutionTime = useRef(0);
 
     const enqueue = (task:Task) => {
-        queue.push(task);
+        queue.current.push(task);
         processQueue();
     };
 
     const processQueue = async () => {
-        if (isProcessing || queue.length === 0) return;
+        if (isProcessing.current || queue.current.length === 0) return;
+
+        isProcessing.current = true;
         
         const now = Date.now();
-        const timeSinceLastExecution = now - lastExecutionTime;
+        const timeSinceLastExecution = now - lastExecutionTime.current;
         const delayNeeded = Math.max(0, 2000 - timeSinceLastExecution);
+        
+        await new Promise(resolve => setTimeout(resolve,delayNeeded));
+    
+        const task = queue.current.shift();
+        console.log("Ejecutando:", task?.action, new Date().toLocaleTimeString() + ":" + new Date().getMilliseconds());
 
-        if (delayNeeded > 0) {
-            setTimeout(processQueue, delayNeeded);
-            return;
-        }
-
-        isProcessing = true;
-        lastExecutionTime = now;
-
-        const task = queue.shift();
-        const time=new Date();
-        console.log("Ejecutando: " + task?.action, time.toLocaleTimeString());
         
         try {
             // AQUI EJECUTAMOS LOS CALLBACK
@@ -52,7 +48,8 @@ export const AppProvider=({children}:{children:ReactNode})=>{
                 await task.callback(); // 🔥 Ejecutamos el callback proporcionado
             }
         } finally {
-            isProcessing = false;
+            lastExecutionTime.current = Date.now();
+            isProcessing.current = false;
             processQueue(); // Procesar la siguiente tarea inmediatamente (se calculará el delay)
         }
     };

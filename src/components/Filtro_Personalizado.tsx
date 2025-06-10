@@ -48,7 +48,7 @@ const Filtro_Personalizado = ({captcha}:{captcha:string}) => {
       closeButton: true,
     });
     enqueue({
-      action: "GuardarFiltro.php",
+      action: "GuardarFiltro Personalizado",
       callback: async () => {
         try {
           const {data} = await clientAxios.post("GuardarFiltro.php", formData);
