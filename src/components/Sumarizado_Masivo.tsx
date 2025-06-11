@@ -9,6 +9,7 @@ import estados from "../data/estados.json";
 import canales from "../data/canales.json";
 import { toast } from "react-toastify";
 import { getFechaCompacta } from "../utils/helpers";
+import * as XLSX from "xlsx";
 
 type Cliente = {
   dni: string;
@@ -356,10 +357,37 @@ const Sumarizado_Masivo = ({captcha,loading,setLoading}:Sumarizado_Masivo) => {
       return;
     };
 
-    const clientes: Cliente[] = JSON.parse(datos);
+    const { clientes } = JSON.parse(datos);
     
+    const renamedData = clientes.map((cliente: Cliente) => {
+        return {
+            FECHA: cliente.fecha??"",
+            ESTADO: cliente.estado_respuesta??"",
+            RESPUESTA: cliente.respuesta??"",
+            DNI_CLIENTE: cliente.dni??"",
+            NOMBRE_CLIENTE: cliente.nombres??"",
+            CELULAR: cliente.celular1??"",
+            TIPO_GESTION: cliente.tipo_gestion??"",
+            PRODUCTO: cliente.producto??"",
+            DEPARTAMENTO: cliente.departamento??"",
+            PROVINCIA: cliente.provincia??"",
+            DISTRITO: cliente.distrito??"",
+            TIPO_DE_CONTACTO: cliente.estado??"",
+            MONTO: cliente.monto??"",
+            PLAZO: cliente.plazo??"",
+            TASA: cliente.tasa??"",
+        }
+    });
 
+    // Preparar los datos para el archivo Excel
+    const ws = XLSX.utils.json_to_sheet(renamedData);
 
+      // Crear un nuevo libro de trabajo
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Clientes");
+
+    // Generar y descargar el archivo Excel
+    XLSX.writeFile(wb, 'ReporteClientes.xlsx');
   }
 
   return (
@@ -428,7 +456,7 @@ const Sumarizado_Masivo = ({captcha,loading,setLoading}:Sumarizado_Masivo) => {
               />
               <div className="flex gap-4 mt-1 text-xs text-gray-500">
                 <a className="text-blue-600 hover:text-blue-800" href="/media/sumarizado.xlsx">Descargar Plantilla</a>
-                <span className="text-xs text-green-600 hover:text-green-800">Descargar Reporte</span>
+                <span className="text-xs text-green-600 hover:text-green-800 cursor-pointer" onClick={descargarReporte}>Descargar Reporte</span>
               </div>
             </div>
 

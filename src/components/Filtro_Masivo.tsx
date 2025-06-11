@@ -4,11 +4,16 @@ import Swal from "sweetalert2";
 import clientAxios from "../config/axios";
 import { useApp } from "../context/AppContext";
 import { toast } from "react-toastify";
+import * as XLSX from "xlsx";
 
 type Cliente = {
   dni: string;
   plazo: number;
   observaciones: string;
+
+  fecha?: string;
+  estado_respuesta?: string;
+  respuesta?: string;
 };
 
 type DatosMasivos = {
@@ -204,8 +209,6 @@ const Filtro_Masivo = ({captcha,loading,setLoading}:Filtro_Masivo) => {
     }
   }
 
-  
-
   const evaluarRespuesta=(mensaje:string)=>{
      if (!mensaje?.includes) return { status: statusTypes.ERROR, mensaje: 'Entrada inválida' };
 
@@ -233,6 +236,37 @@ const Filtro_Masivo = ({captcha,loading,setLoading}:Filtro_Masivo) => {
 
     return { status: statusTypes.UNKNOWN, mensaje: mensaje };
   }
+
+  const descargarReporte=()=>{
+      const datos=localStorage.getItem("datosMasivos");
+      if(!datos) {
+        Swal.fire('No hay datos que descargar');
+        return;
+      };
+  
+      const { clientes } = JSON.parse(datos);
+      
+      const renamedData = clientes.map((cliente: Cliente) => {
+          return {
+              FECHA: cliente.fecha,
+              ESTADO: cliente.estado_respuesta,
+              RESPUESTA: cliente.respuesta,
+              DNI_CLIENTE: cliente.dni,
+              PLAZO: cliente.plazo,
+              TASA: cliente.observaciones,
+          }
+      });
+  
+      // Preparar los datos para el archivo Excel
+      const ws = XLSX.utils.json_to_sheet(renamedData);
+  
+        // Crear un nuevo libro de trabajo
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Clientes");
+  
+      // Generar y descargar el archivo Excel
+      XLSX.writeFile(wb, 'ReporteClientes.xlsx');
+    }
 
   return (
     <div className="py-2 px-4 bg-blue-50 mb-4 rounded-xl">
@@ -298,9 +332,10 @@ const Filtro_Masivo = ({captcha,loading,setLoading}:Filtro_Masivo) => {
                 accept=".xlsx, .xls"
                 onChange={procesarArchivoExcel}
               />
-              <p className="mt-1 text-xs text-gray-500">
-                Formato requerido: .xlsx <a className="text-blue-600 hover:text-blue-800" href="/media/filtro.xlsx">Descargar Plantilla</a>
-              </p>
+              <div className="mt-1 text-xs text-gray-500">
+                <a className="text-blue-600 hover:text-blue-800" href="/media/filtro.xlsx">Descargar Plantilla</a>
+                <span className="text-xs text-green-600 hover:text-green-800 cursor-pointer" onClick={descargarReporte}>Descargar Reporte</span>
+              </div>
             </div>
 
             {errorArchivo && (

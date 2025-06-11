@@ -184,7 +184,8 @@ const Sumarizado_Personalizado = ({captcha}:{captcha:string}) => {
           setRespuestas(data);
         }
 
-        setFormulario({
+        setFormulario(prev=>({
+          ...prev,
           dni: "",
           nombres: "",
           correo: "",
@@ -195,9 +196,10 @@ const Sumarizado_Personalizado = ({captcha}:{captcha:string}) => {
           oficina: "",
           estado: "INTERESADO",
           monto: 0,
-          plazo: "",
-          tasa: "",
-        });
+          // plazo: "",
+          // tasa: "",
+        })
+      );
 
       }catch (error: unknown) {
           if (error instanceof Error) {
