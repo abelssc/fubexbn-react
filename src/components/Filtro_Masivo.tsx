@@ -5,6 +5,7 @@ import clientAxios from "../config/axios";
 import { useApp } from "../context/AppContext";
 import { toast } from "react-toastify";
 import * as XLSX from "xlsx";
+import { getFechaCompacta } from "../utils/helpers";
 
 type Cliente = {
   dni: string;
@@ -169,6 +170,11 @@ const Filtro_Masivo = ({captcha,loading,setLoading}:Filtro_Masivo) => {
             setLoading(false);
             return;
           }
+
+          cliente.fecha=getFechaCompacta();
+          cliente.estado_respuesta=result.status;
+          cliente.respuesta=result.mensaje;
+          clientes[correlativo]=cliente;
          
           const newDatosMasivos: DatosMasivos = {
             correlativo: correlativo+1,
@@ -224,17 +230,18 @@ const Filtro_Masivo = ({captcha,loading,setLoading}:Filtro_Masivo) => {
       if (mensaje.includes("text-danger")) {
         const texto = getText(".text-danger");
         if (texto?.includes("cola de espera")) return { status: statusTypes.WAITING, mensaje: "Espere 2 minutos" };
-        return { status: statusTypes.ERROR, mensaje: texto || "Error no especificado" };
+        return { status: statusTypes.UNKNOWN, mensaje: texto || "Respuesta desconocida" };
       }
       
       if (mensaje.includes("text-primary")) {
         return { status: statusTypes.FILTERED, mensaje: getText("table tr:nth-child(2) td") || "Ya existe" };
       }
+
+      return { status: statusTypes.UNKNOWN, mensaje: mensaje };
+
     } catch {
       return { status: statusTypes.ERROR, mensaje: "Error al procesar respuesta" };
     }
-
-    return { status: statusTypes.UNKNOWN, mensaje: mensaje };
   }
 
   const descargarReporte=()=>{
