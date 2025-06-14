@@ -1,4 +1,5 @@
 import { createContext, useContext, useRef, useState, type ReactNode } from "react";
+import type { User } from "../pages/App";
 
 
 type Task = {
@@ -14,9 +15,9 @@ type AppContextType = {
 };
 const AppContext = createContext<AppContextType|null>(null);
 
-export const AppProvider=({children}:{children:ReactNode})=>{
+export const AppProvider=({children,user}:{children:ReactNode,user:User})=>{
     const [respuestas,setRespuestas] = useState('');
-    const _mes_sel="_06_2025";
+    const _mes_sel=user.mes_sel;
 
     const queue = useRef<Task[]>([]);
     const isProcessing = useRef(false);
