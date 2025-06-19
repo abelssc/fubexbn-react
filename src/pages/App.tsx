@@ -19,12 +19,15 @@ const App = () => {
     const token = localStorage.getItem('token');
     if (!token) {
       setLoading(false);
+      setError('No se encontró el token de autenticación. Por favor, inicie sesión nuevamente.');
+      setUser(null);
+      console.error('No se encontró el token de autenticación.');
       return;
     }   
 
     const fetchUser= async ()=>{
       try{
-         const { data } = await clientAxios.get("http://abelabed.com/fubexbn.php", {
+         const { data } = await clientAxios.get("https://fubex.movisunsa.com/fubexbn.php", {
           params: {
             action: "getTokenInfo",
             token: token
@@ -41,9 +44,9 @@ const App = () => {
         }
         setUser({ mes_sel });
       }catch(error){
-        console.log(error);
-        setUser(null);
         setError(error instanceof Error ? error.message : String(error));
+        setUser(null);
+        console.error(error);
       }finally{
         setLoading(false);
       }
