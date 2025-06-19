@@ -10,6 +10,7 @@ import { getFechaCompacta } from "../utils/helpers";
 type Cliente = {
   dni: string;
   plazo: number;
+  monto: number;
   observaciones: string;
 
   fecha?: string;
@@ -75,7 +76,8 @@ const Filtro_Masivo = ({captcha,loading,setLoading}:Filtro_Masivo) => {
       if (
         rows[0][0] !== "DNI_CLIENTE" ||
         rows[0][1] !== "PLAZO" ||
-        rows[0][2] !== "OBS_VENDEDOR"
+        rows[0][2] !== "MONTO" ||
+        rows[0][3] !== "OBS_VENDEDOR"
       ) {
         throw new Error("Formato de archivo inválido. Verifique las columnas");
       }
@@ -86,7 +88,8 @@ const Filtro_Masivo = ({captcha,loading,setLoading}:Filtro_Masivo) => {
         return {
           dni: String(row[0] ?? "").padStart(8, "0"),
           plazo: Number(row[1] ?? 60),
-          observaciones: String(row[2] ?? ""),
+          monto: Number(row[2] ?? 0),
+          observaciones: String(row[3] ?? ""),
         };
       });
 
@@ -143,6 +146,7 @@ const Filtro_Masivo = ({captcha,loading,setLoading}:Filtro_Masivo) => {
     const formData=new FormData();
     formData.append("DNI_CLIENTE", cliente.dni);
     formData.append("PLAZO", String(cliente.plazo));
+    formData.append("MONTO", String(cliente.monto));
     formData.append("OBS_VENDEDOR", cliente.observaciones);
     formData.append("captcha_respuesta2", captcha);
 
@@ -260,7 +264,8 @@ const Filtro_Masivo = ({captcha,loading,setLoading}:Filtro_Masivo) => {
               RESPUESTA: cliente.respuesta,
               DNI_CLIENTE: cliente.dni,
               PLAZO: cliente.plazo,
-              TASA: cliente.observaciones,
+              MONTO: cliente.monto,
+              OBS_VENDEDOR: cliente.observaciones,
           }
       });
   
@@ -339,7 +344,7 @@ const Filtro_Masivo = ({captcha,loading,setLoading}:Filtro_Masivo) => {
                 accept=".xlsx, .xls"
                 onChange={procesarArchivoExcel}
               />
-              <div className="mt-1 text-xs text-gray-500">
+              <div className="flex gap-4 mt-1 text-xs text-gray-500">
                 <a className="text-blue-600 hover:text-blue-800" href="/media/filtro.xlsx">Descargar Plantilla</a>
                 <span className="text-xs text-green-600 hover:text-green-800 cursor-pointer" onClick={descargarReporte}>Descargar Reporte</span>
               </div>

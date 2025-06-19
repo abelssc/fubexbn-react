@@ -12,7 +12,7 @@ const Captcha = ({src,captcha,setCaptcha}:Captcha) => {
 
     const reloadCaptcha = () => {
     if (!captchaRef.current) return;
-    captchaRef.current.src = "https://fuvexbn.a365.com.pe:7443/BN/captcha2.php";
+    captchaRef.current.src = src;
     }
 
   return (
@@ -40,7 +40,7 @@ const Captcha = ({src,captcha,setCaptcha}:Captcha) => {
         viewBox="0 0 24 24"
         strokeWidth={1.5}
         stroke="currentColor"
-        className="cursor-pointer border border-gray-300 px-4"
+        className="cursor-pointer border border-gray-300 px-3"
         onClick={reloadCaptcha}
       >
         <path

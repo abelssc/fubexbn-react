@@ -116,12 +116,16 @@ const Sumarizado_Personalizado = ({captcha}:{captcha:string}) => {
       callback: async () =>{
           try{
               const { data } = await clientAxios.post("BusquedaDNI.php", formData);
+              if(data==="Captcha incorrecto. Vuelve a intentarlo."){
+                throw new Error(data);
+              }
 
               toast.update(id, { render: "✉️ Dni buscando!", type: "success", isLoading: false, autoClose: 2000 });
 
               setRespuestas(data);
               
           } catch (error: unknown) {
+              toast.update(id, { render: "✉️ Error al buscar el DNI", type: "error", isLoading: false, autoClose: 2000 });
               if (error instanceof Error) {
               Swal.fire({
                   title: error.message || "Error al buscar el DNI",
@@ -176,6 +180,9 @@ const Sumarizado_Personalizado = ({captcha}:{captcha:string}) => {
     callback: async () => {
       try {
         const {data} = await clientAxios.post("GuardarProspecto_BN.php", formData);
+        if(data==="Captcha incorrecto. Vuelve a intentarlo."){
+          throw new Error(data);
+        }
         toast.update(id, { render: "✉️ Registro enviado!", type: "success", isLoading: false, autoClose: 2000 });
 
         if(data.includes('Se registró con éxito!')){
@@ -202,6 +209,7 @@ const Sumarizado_Personalizado = ({captcha}:{captcha:string}) => {
       );
 
       }catch (error: unknown) {
+        toast.update(id, { render: "✉️ Error al enviar el Sumarizado", type: "error", isLoading: false, autoClose: 2000 });
           if (error instanceof Error) {
             Swal.fire({
               title: error.message || "Error al enviar el Sumarizado",

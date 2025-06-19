@@ -31,12 +31,16 @@ const Filtro_Buscar = () => {
       callback: async () => {
         try {
           const { data } = await clientAxios.post("BuscarFiltro.php", formData);
+          if(data==="Captcha incorrecto. Vuelve a intentarlo."){
+            throw new Error(data);
+          }
 
           toast.update(id, { render: "✉️ Dni buscando!", type: "success", isLoading: false, autoClose: 2000 });
 
           setRespuestas(data);
           setDni("");
         } catch (error: unknown) {
+          toast.update(id, { render: "✉️ Error al buscar Dni", type: "error", isLoading: false, autoClose: 2000 });
           if (error instanceof Error) {
             Swal.fire({
               title: error.message || "Error al enviar el filtro",
@@ -73,8 +77,6 @@ const Filtro_Buscar = () => {
             value={dni}
             onChange={(e) => setDni(e.target.value)}
             className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
-            required
-            pattern="\d{8}"
           />
         </div>
 

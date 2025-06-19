@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 type FormularioPersonalizado = {
     dni: string;
     plazo: number;
+    monto: number;
     observaciones: string;
 };
 
@@ -16,6 +17,7 @@ const Filtro_Personalizado = ({captcha}:{captcha:string}) => {
     useState<FormularioPersonalizado>({
       dni: "",
       plazo: 60,
+      monto: 0,
       observaciones: "",
     });
 
@@ -39,6 +41,7 @@ const Filtro_Personalizado = ({captcha}:{captcha:string}) => {
     const formData = new FormData();
     formData.append("DNI_CLIENTE", formularioPersonalizado.dni);
     formData.append("PLAZO", String(formularioPersonalizado.plazo));
+    formData.append("MONTO", String(formularioPersonalizado.monto));
     formData.append("OBS_VENDEDOR", formularioPersonalizado.observaciones);
     formData.append("captcha_respuesta2", captcha);
 
@@ -52,6 +55,9 @@ const Filtro_Personalizado = ({captcha}:{captcha:string}) => {
       callback: async () => {
         try {
           const {data} = await clientAxios.post("GuardarFiltro.php", formData);
+          if(data==="Captcha incorrecto. Vuelve a intentarlo."){
+            throw new Error(data);
+          }
           setRespuestas(data);
 
           toast.update(id, { render: "✉️ Dni enviado!", type: "success", isLoading: false, autoClose: 2000 });
@@ -62,6 +68,7 @@ const Filtro_Personalizado = ({captcha}:{captcha:string}) => {
             observaciones: "",
           }));
         } catch (error: unknown) {
+          toast.update(id, { render: "✉️ Error al enviar el filtro", type: "error", isLoading: false, autoClose: 2000 });
           if (error instanceof Error) {
             Swal.fire({
               title: error.message || "Error al enviar el filtro",
@@ -87,29 +94,41 @@ const Filtro_Personalizado = ({captcha}:{captcha:string}) => {
       <form
         className="flex flex-col gap-3"
         onSubmit={enviarFormularioPersonalizado}
-      >
-        <div className="mb-2">
-          <label className="block text-sm text-gray-700">DNI</label>
-          <input
-            type="text"
-            name="dni"
-            value={formularioPersonalizado.dni}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
-            required
-          />
-        </div>
-
-        <div className="mb-2">
-          <label className="block text-sm text-gray-700">Plazo</label>
-          <input
-            type="number"
-            name="plazo"
-            value={formularioPersonalizado.plazo}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
-            required
-          />
+      > 
+        <div className="flex gap-4">
+          <div>
+            <label className="block text-sm text-gray-700">DNI</label>
+            <input
+              type="text"
+              name="dni"
+              value={formularioPersonalizado.dni}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-700">Plazo</label>
+            <input
+              type="number"
+              name="plazo"
+              value={formularioPersonalizado.plazo}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-700">Monto</label>
+            <input
+              type="number"
+              name="monto"
+              value={formularioPersonalizado.monto}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
+              required
+            />
+          </div>
         </div>
 
         <div className="mb-2">
