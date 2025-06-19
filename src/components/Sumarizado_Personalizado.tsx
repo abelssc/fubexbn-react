@@ -255,7 +255,7 @@ const Sumarizado_Personalizado = ({captcha}:{captcha:string}) => {
                   className="py-1 px-2 bg-blue-600 text-white text-xs cursor-pointer hover:bg-blue-700"
                   onClick={buscarDni}
                 >
-                    Enviar
+                    Buscar
                 </button>
               </div>
             </div>
