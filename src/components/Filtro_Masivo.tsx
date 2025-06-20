@@ -23,6 +23,11 @@ type DatosMasivos = {
   correlativo: number;
 };
 
+type ConsultaMasiva = {
+  correlativo: number;
+  consultas: string[];
+}
+
 type Details = {
   time:string;
   content:string;
@@ -48,8 +53,9 @@ const Filtro_Masivo = ({captcha,loading,setLoading}:Filtro_Masivo) => {
   const archivoRef = useRef<HTMLInputElement | null>(null);
   const [datosMasivos, setDatosMasivos] = useState<DatosMasivos | null>(null);
   const [errorArchivo, setErrorArchivo] = useState("");
-  const enviandoRef = useRef(true);
-  const timeoutRef  = useRef<number | null>(null);
+  const enviandoRef = useRef(true);//Lo usamos para detener el bucle de envio
+  const timeoutRef  = useRef<number | null>(null);//Timeout para controlar el tiempo de espera entre envíos
+  const timeoutConsultaRef  = useRef<number | null>(null);//Timeout para controlar el tiempo de espera entre consultas
   const [details,setDetails]=useState<Details[]>([]);
 
   useEffect(() => {
@@ -64,69 +70,40 @@ const Filtro_Masivo = ({captcha,loading,setLoading}:Filtro_Masivo) => {
     }
   }, []);
 
-  const procesarArchivoExcel = async (e:React.ChangeEvent<HTMLInputElement>) => {
-    
-    setErrorArchivo("");
-
-    const archivo = archivoRef.current;
-    if (!archivo || !archivo.files || archivo.files.length === 0) return;
-
-    try {
-      const rows = await readXlsxFile(archivo.files[0]);
-      if (
-        rows[0][0] !== "DNI_CLIENTE" ||
-        rows[0][1] !== "PLAZO" ||
-        rows[0][2] !== "MONTO" ||
-        rows[0][3] !== "OBS_VENDEDOR"
-      ) {
-        throw new Error("Formato de archivo inválido. Verifique las columnas");
-      }
-      //eliminar cabecera
-      rows.shift();
-
-      const clientes: Cliente[] = rows.map((row) => {
-        return {
-          dni: String(row[0] ?? "").padStart(8, "0"),
-          plazo: Number(row[1] ?? 60),
-          monto: Number(row[2] ?? 0),
-          observaciones: String(row[3] ?? ""),
-        };
-      });
-
-      const newDatosMasivos: DatosMasivos = {
-        correlativo: 0,
-        clientes,
-      };
-      localStorage.setItem("datosMasivos", JSON.stringify(newDatosMasivos));
-      setDatosMasivos(newDatosMasivos);
-      setErrorArchivo("");
-      e.target.value="";
-      toast.success("📃 Archivo cargado exitósamente",{
-        autoClose: 2000
-      })
-
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        setErrorArchivo(error.message || "Error al procesar el archivo");
-      } else {
-        setErrorArchivo("Error al procesar el archivo");
-      }
-    }
-  };
-
-  const enviarDatosSecuenciales=()=>{
+  /**
+   * =============== INICIO Y DETENCIÓN DE DATOS MASIVOS
+   */
+  const startDatosMasivos= ()=>{
     setLoading(true);
-    if(!enviandoRef.current){
-      setLoading(false);
-      return;
-    }
 
     if(!captcha.length) {
         Swal.fire('Rellene el captcha');
         setLoading(false);
         return;
     }
-
+    enviarDatosSecuenciales();
+    consultarDatosSecuenciales();
+  }
+  const detenerDatosSecuenciales=()=>{
+    setLoading(false);
+   
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      console.log("⛔ Timeout cancelado");
+    }
+    if (timeoutConsultaRef.current) {
+      clearTimeout(timeoutConsultaRef.current);
+      console.log("⛔ Timeout de consulta cancelado");
+    }
+  }
+  /**
+   * ================ ENVIAR DATOS SECUENCIALES
+   */
+  const enviarDatosSecuenciales=()=>{
+    if(!enviandoRef.current){
+      setLoading(false);
+      return;
+    }
     const datosGuardados = localStorage.getItem("datosMasivos");
     if (!datosGuardados) {
       Swal.fire('No hay datos para enviar');
@@ -187,7 +164,6 @@ const Filtro_Masivo = ({captcha,loading,setLoading}:Filtro_Masivo) => {
           localStorage.setItem('datosMasivos',JSON.stringify(newDatosMasivos));
           setDatosMasivos(newDatosMasivos);
           timeoutRef.current=setTimeout(enviarDatosSecuenciales,2000);
-         
           
         } catch (error: unknown) {
           setLoading(false);
@@ -209,18 +185,8 @@ const Filtro_Masivo = ({captcha,loading,setLoading}:Filtro_Masivo) => {
 
     
   }
-
-  const detenerDatosSecuenciales=()=>{
-    setLoading(false);
-   
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      console.log("⛔ Timeout cancelado");
-    }
-  }
-
   const evaluarRespuesta=(mensaje:string)=>{
-     if (!mensaje?.includes) return { status: statusTypes.ERROR, mensaje: 'Entrada inválida' };
+    if (!mensaje?.includes) return { status: statusTypes.ERROR, mensaje: 'Entrada inválida' };
 
     // Casos directos
     if (mensaje.includes("Se registró con éxito")) return { status: statusTypes.SUCCESS, mensaje: "Registro exitoso!" };
@@ -247,38 +213,223 @@ const Filtro_Masivo = ({captcha,loading,setLoading}:Filtro_Masivo) => {
       return { status: statusTypes.ERROR, mensaje: "Error al procesar respuesta" };
     }
   }
+  /**
+   * ================ CONSULTA SECUENCIAL
+   */
+  const consultarDatosSecuenciales=()=>{
+    const datosGuardados = localStorage.getItem("datosMasivos");
+    const datosConsulta = localStorage.getItem("consultaMasiva");
+    if (!datosGuardados) {
+      console.log("⛔ No hay datos para consultar");
+      return;
+    }
+    if (!datosConsulta) {
+      console.log("⛔ No hay datos de consulta");
+      return;
+    }
+    const {clientes,correlativo}: DatosMasivos = JSON.parse(datosGuardados);
+    const { correlativo: correlativoConsulta,consultas }: ConsultaMasiva = JSON.parse(datosConsulta);
+    if (correlativoConsulta >= clientes.length) {
+      console.log("⛔ Se terminaron de consultar todos los dnis");
+      return;
+    }
+    if(correlativoConsulta>correlativo){
+      console.log("⛔ No hay datos para consultar, aún no se han enviado");
+      setTimeout(consultarDatosSecuenciales,120000);
+      return;
+    }
+
+    const cliente=clientes[correlativoConsulta];
+    const formData=new FormData();
+    formData.append("DNI_CLIENTE", cliente.dni);
+    formData.append("PLAZO", String(cliente.plazo));
+    formData.append("MONTO", String(cliente.monto));
+    formData.append("OBS_VENDEDOR", "");
+    formData.append("captcha_respuesta2", captcha);
+
+    enqueue({
+      action: "GuardarFiltro.php",
+      callback: async () => {
+        try {
+          const {data} = await clientAxios.post("GuardarFiltro.php", formData);
+          const result=evaluarRespuestaConsulta(data);
+          
+          if(result.obs_error==='AUN NO SE FILTRA'){
+            //ESPERAMOS 2MIN PARA VOLVER A CONSULTAR
+            timeoutConsultaRef.current=setTimeout(consultarDatosSecuenciales,120000);
+            return;
+          }
+          if(result.obs_error==='CAPTCHA INCORRECTO'){
+            Swal.fire('Captcha Filtros incorrecto');
+            enviandoRef.current=false;
+            detenerDatosSecuenciales();
+            return;
+          }
+          
+          const newConsultaMasiva: ConsultaMasiva = {
+            correlativo: correlativoConsulta + 1,
+            consultas: [...consultas, result.obs_error],
+          };
+          localStorage.setItem('consultaMasiva',JSON.stringify(newConsultaMasiva));
+          timeoutConsultaRef.current=setTimeout(consultarDatosSecuenciales,2000);
+          
+        } catch (error: unknown) {
+          if (error instanceof Error) {
+            Swal.fire({
+              title: error.message || "Error al consultar el Filtro",
+              icon: "error",
+            });
+          } else {
+            Swal.fire({
+              title: "Error al consultar el Filtro",
+              icon: "error",
+            });
+          }
+          console.error(error);
+        }
+      },
+    });
+
+  };
+  const evaluarRespuestaConsulta=(mensaje:string)=>{
+    let validation;
+    let obs_error;
+    if(!mensaje){
+        validation='INCORRECTO';
+        obs_error='NO SE FILTRO EL DNI'
+    }else if(mensaje.includes('Aun no se filtra')){
+        // CREO QUE ESTE MENSAJE ES DEPRECIED
+        validation='INCORRECTO';
+        obs_error='AUN NO SE FILTRA'
+    }else if(mensaje.includes('Captcha incorrecto')){
+        validation='INCORRECTO';
+        obs_error='CAPTCHA INCORRECTO'
+    }
+    else{
+        // Crear un elemento div temporal y asignar el mensaje como su HTML interno
+        const div = document.createElement('div');
+        div.innerHTML = mensaje;
+    
+        // Buscar el elemento .card y luego la tabla y el último tr en la tabla
+        const card = div.querySelector('.card');
+        const table = card?.querySelector('table');
+        const tr = table?.querySelector('tr:last-child'); // último tr en la tabla
+        if (tr) {
+            // Extraer los valores de validación y obs_error
+            validation = tr.querySelector('td:first-child')?.textContent?.split(':')[1]?.trim() || 'INCORRECTO';
+            obs_error = tr.querySelector('td:nth-child(2)')?.textContent?.split(':')[1].trim();
+        
+            const validationText = tr.querySelector('td:first-child')?.textContent?.split(':')[1]?.trim();
+            const obsErrorText = tr.querySelector('td:nth-child(2)')?.textContent?.split(':')[1]?.trim();
+            validation = validationText || 'INCORRECTO';
+            obs_error = obsErrorText || 'NO SE PUDO ANALIZAR';
+        } else {
+            validation = 'INCORRECTO';
+            obs_error = 'NO SE PUDO ANALIZAR';
+        }
+        if(validation==='CORRECTO') obs_error='CORRECTO';
+    }
+    return {
+        validation,
+        obs_error
+    }
+  };
+  /**
+   * ============= EXCEL SUBIDA Y DESCARGA
+  */
+  const procesarArchivoExcel = async (e:React.ChangeEvent<HTMLInputElement>) => {
+    
+    setErrorArchivo("");
+
+    const archivo = archivoRef.current;
+    if (!archivo || !archivo.files || archivo.files.length === 0) return;
+
+    try {
+      const rows = await readXlsxFile(archivo.files[0]);
+      if (
+        rows[0][0] !== "DNI_CLIENTE" ||
+        rows[0][1] !== "PLAZO" ||
+        rows[0][2] !== "MONTO" ||
+        rows[0][3] !== "OBS_VENDEDOR"
+      ) {
+        throw new Error("Formato de archivo inválido. Verifique las columnas");
+      }
+      //eliminar cabecera
+      rows.shift();
+
+      const clientes: Cliente[] = rows.map((row) => {
+        return {
+          dni: String(row[0] ?? "").padStart(8, "0"),
+          plazo: Number(row[1] ?? 60),
+          monto: Number(row[2] ?? 0),
+          observaciones: String(row[3] ?? ""),
+        };
+      });
+
+      const newDatosMasivos: DatosMasivos = {
+        correlativo: 0,
+        clientes,
+      };
+      const newConsultaMasiva: ConsultaMasiva = {
+        correlativo: 0,
+        consultas: [],
+      };
+      //Limpiar localStorage
+      localStorage.setItem("datosMasivos", JSON.stringify(newDatosMasivos));
+      localStorage.setItem("consultaMasiva", JSON.stringify(newConsultaMasiva));
+      setDatosMasivos(newDatosMasivos);
+      setErrorArchivo("");
+      e.target.value="";
+      toast.success("📃 Archivo cargado exitósamente",{
+        autoClose: 2000
+      })
+
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setErrorArchivo(error.message || "Error al procesar el archivo");
+      } else {
+        setErrorArchivo("Error al procesar el archivo");
+      }
+    }
+  };
 
   const descargarReporte=()=>{
-      const datos=localStorage.getItem("datosMasivos");
-      if(!datos) {
-        Swal.fire('No hay datos que descargar');
-        return;
-      };
-  
-      const { clientes } = JSON.parse(datos);
-      
-      const renamedData = clientes.map((cliente: Cliente) => {
-          return {
-              FECHA: cliente.fecha,
-              ESTADO: cliente.estado_respuesta,
-              RESPUESTA: cliente.respuesta,
-              DNI_CLIENTE: cliente.dni,
-              PLAZO: cliente.plazo,
-              MONTO: cliente.monto,
-              OBS_VENDEDOR: cliente.observaciones,
-          }
-      });
-  
-      // Preparar los datos para el archivo Excel
-      const ws = XLSX.utils.json_to_sheet(renamedData);
-  
-        // Crear un nuevo libro de trabajo
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Clientes");
-  
-      // Generar y descargar el archivo Excel
-      XLSX.writeFile(wb, 'ReporteClientes.xlsx');
-    }
+    const datos=localStorage.getItem("datosMasivos");
+    const datosConsulta=localStorage.getItem("consultaMasiva");
+    if(!datos) {
+      Swal.fire('No hay datos que descargar');
+      return;
+    };
+
+    const { clientes } = JSON.parse(datos);
+    const consultas = datosConsulta ? JSON.parse(datosConsulta).consultas : [];
+    
+    const renamedData = clientes.map((cliente: Cliente,index:number) => {
+        return {
+            FECHA: cliente.fecha,
+            ESTADO: cliente.estado_respuesta,
+            RESPUESTA: cliente.respuesta,
+            DNI_CLIENTE: cliente.dni,
+            PLAZO: cliente.plazo,
+            MONTO: cliente.monto,
+            OBS_VENDEDOR: cliente.observaciones,
+            CONSULTA: consultas[index] || "",
+        }
+    });
+
+    // Preparar los datos para el archivo Excel
+    const ws = XLSX.utils.json_to_sheet(renamedData);
+
+      // Crear un nuevo libro de trabajo
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Clientes");
+
+    // Generar y descargar el archivo Excel
+    XLSX.writeFile(wb, 'ReporteClientes.xlsx');
+  }
+  /**
+   * ============= FIN
+  */
 
   return (
     <div className="py-2 px-4 bg-blue-50 mb-4 rounded-xl">
@@ -309,7 +460,7 @@ const Filtro_Masivo = ({captcha,loading,setLoading}:Filtro_Masivo) => {
                   className="bg-blue-600 text-white py-1 px-2 rounded hover:bg-blue-700 text-xs cursor-pointer ml-4"
                   onClick={()=>{
                     enviandoRef.current=true;
-                    enviarDatosSecuenciales();
+                    startDatosMasivos();
                   }}
                   >
                     Enviar
