@@ -5,11 +5,40 @@ const clientAxios = axios.create(
         baseURL: import.meta.env.VITE_API_URL,
         withCredentials: true, 
         headers: {
-            // 'Content-Type': 'application/json',//Mejor hacemos que Axios detecte automaticamente el tipo de contenido comentando esta linea, para este caso debemos alternar entre formData o Json
-            'Accept': 'application/json',
+            'Accept': 'application/json'
         },
     }
 )
+
+
+clientAxios.interceptors.response.use(
+  response => {
+    const { data } = response;
+
+    // Validación de sesión cerrada
+    if (typeof data === "string") {
+      if (data.includes("Tu sesión ha sido cerrada") || data.includes("general/control_ingreso.php")) {
+        window.location.href = "https://fuvexbn.a365.com.pe:7443/";
+        return Promise.reject(new Error("Sesión cerrada")); // evita continuar
+      }
+
+      if (data === "Captcha incorrecto. Vuelve a intentarlo.") {
+        return Promise.reject(new Error(data));
+      }
+    }
+
+    return response;
+  },
+  error => {
+    // Puedes manejar otros errores (como 500, 404, etc)
+    return Promise.reject(error);
+  }
+);
+
+
+
+
+
 // clientAxios.interceptors.request.use(config => {
 //     const token = localStorage.getItem('token');
 //     if (token) {

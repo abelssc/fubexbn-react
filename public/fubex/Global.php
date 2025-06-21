@@ -8,3 +8,12 @@ header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-W
 // header('Content-Type: application/json');
 
 $captcha_incorrecto='Captcha incorrecto. Vuelve a intentarlo.';
+//Cuando se lanza este script, se cerrara la sesion y no permitira ninguna peticion al sistema, debemos relogear.
+$sesion_cerrada=<<<HTML
+    <script>
+            alert('Tu sesión ha sido cerrada porque iniciaste sesión en otro dispositivo.');
+            window.location.href = 'https://fuvexbn.a365.com.pe:7443'; // Redirige al login u otra página
+    </script>
+HTML;
+
+if(true){}
