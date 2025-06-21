@@ -455,7 +455,7 @@ const Sumarizado_Masivo = ({captcha,loading,setLoading}:Sumarizado_Masivo) => {
                 onChange={procesarArchivoExcel}
               />
               <div className="flex gap-4 mt-1 text-xs text-gray-500">
-                <a className="text-blue-600 hover:text-blue-800" href="/media/sumarizado.xlsx">Descargar Plantilla</a>
+                <a className="text-blue-600 hover:text-blue-800" href="https://fubex.movisunsa.com/media/sumarizado.xlsx">Descargar Plantilla</a>
                 <span className="text-xs text-green-600 hover:text-green-800 cursor-pointer" onClick={descargarReporte}>Descargar Reporte</span>
               </div>
             </div>
