@@ -1,0 +1,24 @@
+{
+    "manifest_version": 3,
+    "name": "REACT FUBEXBN",
+    "description": "Mejora tu sistema, haslo dinamico",
+    "version": "1.0",
+    "icons": {
+        "16": "public/img/icon.png",
+        "32": "public/img/icon.png",
+        "48": "public/img/icon.png",
+        "128": "public/img/icon.png"
+    },
+    "content_scripts": [
+        {
+        "matches": ["https://fuvexbn.a365.com.pe:7443/BN/*"],
+        "js": ["content.js"]
+        }
+    ],
+     "web_accessible_resources": [
+        {
+        "resources": ["assets/*", "media/*","public/img/icon.png"],
+        "matches": ["<all_urls>"]
+        }
+    ]
+}
