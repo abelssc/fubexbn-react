@@ -15,6 +15,7 @@ type Formulario = {
   celular1: string;
   celular2: string;
   tipo_gestion: string;
+  fecha_visita: string;
   producto: string;
   oficina: string;
   estado: string;
@@ -34,6 +35,7 @@ const Sumarizado_Personalizado = ({captcha}:{captcha:string}) => {
     celular1: "",
     celular2: "",
     tipo_gestion: "PRESENCIAL",
+    fecha_visita: "",
     producto: "PRÉSTAMO NUEVO",
     oficina: "",
     estado: "INTERESADO",
@@ -156,6 +158,7 @@ const Sumarizado_Personalizado = ({captcha}:{captcha:string}) => {
     formData.append('TELEFONO1',formulario.celular1);
     formData.append('TELEFONO2',formulario.celular2);
     formData.append('CANAL',formulario.tipo_gestion);
+    formData.append('FECHA_VISITA',formulario.fecha_visita);
     formData.append('honeypot','');
     formData.append('timestamp',String(timestanpRef.current));
     formData.append('PRODUCTO',formulario.producto);
@@ -321,22 +324,38 @@ const Sumarizado_Personalizado = ({captcha}:{captcha:string}) => {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tipo de gestión
-            </label>
-            <select
-              name="tipo_gestion"
-              value={formulario.tipo_gestion}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              required
-            >
-              <option value="">Seleccionar...</option>
-              {
-                canales.map((c,i)=><option key={i} value={c}>{c}</option>)
-              }
-            </select>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Tipo de gestión
+              </label>
+              <select
+                name="tipo_gestion"
+                value={formulario.tipo_gestion}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                required
+              >
+                <option value="">Seleccionar...</option>
+                {
+                  canales.map((c,i)=><option key={i} value={c}>{c}</option>)
+                }
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Fecha de visita
+              </label>
+              <input
+                type="date"
+                name="fecha_visita"
+                value={formulario.fecha_visita}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                required
+              />
+            </div>
           </div>
         </div>
 

@@ -21,10 +21,6 @@ clientAxios.interceptors.response.use(
         window.location.href = "https://fuvexbn.a365.com.pe:7443/";
         return Promise.reject(new Error("Sesión cerrada")); // evita continuar
       }
-
-      if (data === "Captcha incorrecto. Vuelve a intentarlo.") {
-        return Promise.reject(new Error(data));
-      }
     }
 
     return response;

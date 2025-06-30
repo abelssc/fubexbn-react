@@ -18,6 +18,7 @@ type Cliente = {
   celular1: string;
   celular2: string;
   tipo_gestion: string;
+  fecha_visita: string;  // 'dd/mm/yyyy'
   producto: string;
   oficina: string;
   departamento:string;
@@ -99,14 +100,15 @@ const Sumarizado_Masivo = ({captcha,loading,setLoading}:Sumarizado_Masivo) => {
         rows[0][1] !== "NOMBRE_CLIENTE" ||
         rows[0][2] !== "CELULAR" ||
         rows[0][3] !== "TIPO_GESTION" ||
-        rows[0][4] !== "PRODUCTO" ||
-        rows[0][5] !== "DEPARTAMENTO" ||
-        rows[0][6] !== "PROVINCIA" ||
-        rows[0][7] !== "DISTRITO" ||
-        rows[0][8] !== "TIPO_DE_CONTACTO" ||
-        rows[0][9] !== "MONTO" ||
-        rows[0][10] !== "PLAZO" ||
-        rows[0][11] !== "TASA"
+        rows[0][4] !== "FECHA_DESEMBOLSO" ||
+        rows[0][5] !== "PRODUCTO" ||
+        rows[0][6] !== "DEPARTAMENTO" ||
+        rows[0][7] !== "PROVINCIA" ||
+        rows[0][8] !== "DISTRITO" ||
+        rows[0][9] !== "TIPO_DE_CONTACTO" ||
+        rows[0][10] !== "MONTO" ||
+        rows[0][11] !== "PLAZO" ||
+        rows[0][12] !== "TASA"
       ) {
         throw new Error("Formato de archivo inválido. Verifique las columnas");
       }
@@ -114,6 +116,17 @@ const Sumarizado_Masivo = ({captcha,loading,setLoading}:Sumarizado_Masivo) => {
       rows.shift();
 
       const clientes: Cliente[] = rows.map((row) => {
+        let fecha_visita = "";
+        if (row[4]) {
+          const fecha = new Date(row[4] as string);
+          if (!isNaN(fecha.getTime())) { // Verifica que sea una fecha válida
+            const anio = fecha.getFullYear();
+            const mes  = String(fecha.getMonth() + 1).padStart(2, "0");
+            const dia  = String(fecha.getDate()).padStart(2, "0");
+            fecha_visita = `${anio}-${mes}-${dia}`; // yyyy-mm-dd
+          }
+        }
+
         return {
             dni: String(row[0] ?? "").padStart(8, "0"),
             nombres: String(row[1] ?? ""),
@@ -121,15 +134,16 @@ const Sumarizado_Masivo = ({captcha,loading,setLoading}:Sumarizado_Masivo) => {
             celular1: String(row[2] ?? ""),
             celular2: "",
             tipo_gestion: String(row[3] ?? ""),
-            producto: String(row[4] ?? ""),
+            fecha_visita: fecha_visita,
+            producto: String(row[5] ?? ""),
             oficina:"",
-            departamento: String(row[5] ?? ""),
-            provincia: String(row[6] ?? ""),
-            distrito: String(row[7] ?? ""),
-            estado: String(row[8] ?? ""),
-            monto: Number(row[9] ?? 0),
-            plazo: Number(row[10] ?? 0),
-            tasa: Number(row[11] ?? 0)
+            departamento: String(row[6] ?? ""),
+            provincia: String(row[7] ?? ""),
+            distrito: String(row[8] ?? ""),
+            estado: String(row[9] ?? ""),
+            monto: Number(row[10] ?? 0),
+            plazo: Number(row[11] ?? 0),
+            tasa: Number(row[12] ?? 0)
         };
       });
 
@@ -191,6 +205,7 @@ const Sumarizado_Masivo = ({captcha,loading,setLoading}:Sumarizado_Masivo) => {
     formData.append("TELEFONO1",cliente.celular1);
     formData.append("TELEFONO2",cliente.celular2);
     formData.append("CANAL",cliente.tipo_gestion);
+    formData.append("FECHA_VISITA",cliente.fecha_visita);
     formData.append("honeypot","");
     formData.append("timestamp",String(timestanpRef.current));
     formData.append("PRODUCTO",cliente.producto);
@@ -368,6 +383,7 @@ const Sumarizado_Masivo = ({captcha,loading,setLoading}:Sumarizado_Masivo) => {
             NOMBRE_CLIENTE: cliente.nombres??"",
             CELULAR: cliente.celular1??"",
             TIPO_GESTION: cliente.tipo_gestion??"",
+            FECHA_DESEMBOLSO: cliente.fecha_visita??"",
             PRODUCTO: cliente.producto??"",
             DEPARTAMENTO: cliente.departamento??"",
             PROVINCIA: cliente.provincia??"",
