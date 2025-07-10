@@ -195,7 +195,7 @@ const Filtro_Masivo = ({captcha,loading,setLoading}:Filtro_Masivo) => {
     // Parseo condicional
     try {
       const doc = new DOMParser().parseFromString(mensaje, 'text/html');
-      const getText = (sel:string) => doc.querySelector(sel)?.textContent?.trim();
+      const getText = (sel:string) => doc.querySelector(sel)?.textContent?.replace(/\s+/g, ' ')?.trim();
       
       if (mensaje.includes("text-danger")) {
         const texto = getText(".text-danger");
@@ -203,8 +203,11 @@ const Filtro_Masivo = ({captcha,loading,setLoading}:Filtro_Masivo) => {
         return { status: statusTypes.UNKNOWN, mensaje: texto || "Respuesta desconocida" };
       }
       
-      if (mensaje.includes("text-primary")) {
-        return { status: statusTypes.FILTERED, mensaje: getText("table tr:nth-child(2) td") || "Ya existe" };
+      // if (mensaje.includes("text-primary")) {
+      //   return { status: statusTypes.FILTERED, mensaje: getText("table tr:nth-child(2) td") || "Ya existe" };
+      // }
+      if (mensaje.includes("USUARIO SOLICITUD")) {
+        return { status: statusTypes.FILTERED, mensaje: getText("#info_0 p:nth-child(3)") || "Ya existe" };
       }
 
       return { status: statusTypes.UNKNOWN, mensaje: mensaje };
@@ -291,49 +294,55 @@ const Filtro_Masivo = ({captcha,loading,setLoading}:Filtro_Masivo) => {
     });
 
   };
-  const evaluarRespuestaConsulta=(mensaje:string)=>{
-    let validation;
-    let obs_error;
-    if(!mensaje){
-        validation='INCORRECTO';
-        obs_error='NO SE FILTRO EL DNI'
-    }else if(mensaje.includes('Aun no se filtra')){
-        // CREO QUE ESTE MENSAJE ES DEPRECIED
-        validation='INCORRECTO';
-        obs_error='AUN NO SE FILTRA'
-    }else if(mensaje.includes('Captcha incorrecto')){
-        validation='INCORRECTO';
-        obs_error='CAPTCHA INCORRECTO'
-    }
-    else{
-        // Crear un elemento div temporal y asignar el mensaje como su HTML interno
+  const evaluarRespuestaConsulta = (mensaje: string) => {
+    let validation: string;
+    let obs_error: string;
+
+    if (!mensaje) {
+        validation = 'INCORRECTO';
+        obs_error = 'NO SE FILTRO EL DNI';
+    } else if (mensaje.includes('Aún no se filtra')) {
+        validation = 'INCORRECTO';
+        obs_error = 'AUN NO SE FILTRA';
+    } else if (mensaje.includes('Captcha incorrecto')) {
+        validation = 'INCORRECTO';
+        obs_error = 'CAPTCHA INCORRECTO';
+    } else {
         const div = document.createElement('div');
         div.innerHTML = mensaje;
-    
-        // Buscar el elemento .card y luego la tabla y el último tr en la tabla
-        const card = div.querySelector('.card');
-        const table = card?.querySelector('table');
-        const tr = table?.querySelector('tr:last-child'); // último tr en la tabla
-        if (tr) {
-            // Extraer los valores de validación y obs_error
-            validation = tr.querySelector('td:first-child')?.textContent?.split(':')[1]?.trim() || 'INCORRECTO';
-            obs_error = tr.querySelector('td:nth-child(2)')?.textContent?.split(':')[1].trim();
-        
-            const validationText = tr.querySelector('td:first-child')?.textContent?.split(':')[1]?.trim();
-            const obsErrorText = tr.querySelector('td:nth-child(2)')?.textContent?.split(':')[1]?.trim();
+
+        // Buscar todos los elementos <strong>
+        const strongs = Array.from(div.querySelectorAll('strong'));
+
+        // Buscar el que contiene "VALIDACIÓN:"
+        const validacionNode = strongs.find(node => node.textContent?.includes('VALIDACIÓN:'));
+        const obsErrorNode = strongs.find(node => node.textContent?.includes('OBS ERROR:'));
+
+        if (validacionNode) {
+            // VALIDACIÓN puede tener el valor como siguiente nodo de texto
+            const validationText = validacionNode.nextSibling?.textContent?.trim();
             validation = validationText || 'INCORRECTO';
-            obs_error = obsErrorText || 'NO SE PUDO ANALIZAR';
+
+            if (validation === 'CORRECTO') {
+                obs_error = 'CORRECTO';
+            } else if (obsErrorNode) {
+                const obsErrorText = obsErrorNode.nextSibling?.textContent?.trim();
+                obs_error = obsErrorText || 'NO SE PUDO ANALIZAR';
+            } else {
+                obs_error = 'NO SE PUDO ANALIZAR';
+            }
         } else {
             validation = 'INCORRECTO';
             obs_error = 'NO SE PUDO ANALIZAR';
         }
-        if(validation==='CORRECTO') obs_error='CORRECTO';
     }
+
     return {
         validation,
         obs_error
-    }
+    };
   };
+
   /**
    * ============= EXCEL SUBIDA Y DESCARGA
   */

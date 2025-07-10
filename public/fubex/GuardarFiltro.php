@@ -127,3 +127,45 @@ if($dni){
     exit;
 }
 
+/** new aun no se filtra
+ * <div class="row">
+    <div class="col-md-12 ">
+        <div class="border rounded p-3 shadow-sm" style="background-color: #e1d8f8;">
+            <div class="row" id="bloque_0">
+                <div class="col-md-6">
+                    <strong>DNI:</strong>
+                    09305065<br>
+                </div>
+                <div class="col-md-6">
+                    <hr>
+                </div>
+            </div>
+            <strong>Aún no se filtra</strong>
+            <div class="mt-2 mb-3">
+                <span class="text-muted" style="font-size: 12px; text-decoration: underline; cursor: pointer;" onclick="document.getElementById('info_0').classList.toggle('d-none')">Información de la solicitud</span>
+                <div id="info_0" class="card card-body p-2 mt-2 d-none" style="font-size: 13px;">
+                    <p style='margin:0'>
+                        <strong>DNI:</strong>
+                        09305065
+                    </p>
+                    <p style='margin:0'>
+                        <strong>FECHA SOLICITUD:</strong>
+                        2025-07-09 18:17:31
+                    </p>
+                    <p style='margin:0'>
+                        <strong>USUARIO SOLICITUD:</strong>
+                        VICTOR MARTIN ENRIQUE TUME BERMEO 
+                    </p>
+                    <p style='margin:0'>
+                        <strong>PLAZO:</strong>
+                        60 - <strong>MONTO:</strong>
+                        99999
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div></div>
+
+ */
